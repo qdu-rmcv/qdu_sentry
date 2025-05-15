@@ -1,0 +1,2 @@
+float32 chassis_yaw_offset
+uint8 damaged_armor_id
