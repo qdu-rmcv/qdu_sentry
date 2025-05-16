@@ -93,6 +93,8 @@ LidarscanNode::LidarscanNode(const rclcpp::NodeOptions & options)
     std::chrono::milliseconds(50),
     std::bind(&LidarscanNode::scanTimerCallback, this));
 
+    obstacle_pub_ = this -> create_publisher<
+
   // 初始化周期相关变量
   cycle_completed_ = false;
   cycle_start_yaw_ = 0.0;

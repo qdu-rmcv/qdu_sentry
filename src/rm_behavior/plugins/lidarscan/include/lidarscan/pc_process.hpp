@@ -47,8 +47,7 @@ public:
                   double min_obstacle_dimension, 
                   double max_obstacle_dimension,
                   double min_obstacle_size);
-    
-    // 过滤点云 - 移除const限定符
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr filterCloud(
         const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
     

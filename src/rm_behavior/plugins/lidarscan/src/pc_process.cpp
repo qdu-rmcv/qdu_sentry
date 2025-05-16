@@ -51,7 +51,7 @@ std::vector<ObstaclePoint> PointCloudProcessor::detectObstacles(
     
     // 聚类提取障碍物
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-    ec.setClusterTolerance(0.2);  // m
+    ec.setClusterTolerance(0.2);
     ec.setMinClusterSize(10);
     ec.setMaxClusterSize(10000);
     ec.setInputCloud(cloud);
