@@ -20,9 +20,7 @@
 namespace lidarscan {
 
 LidarscanNode::LidarscanNode(const rclcpp::NodeOptions & options)
-: Node("lidarscan_node", options),
-  current_state_(ScanState::IDLE),
-  obstacle_scan_index_(0)
+: Node("lidarscan_node", options)
 {
   // 参数初始化
   this->declare_parameter<std::string>("map_frame", "odom");
@@ -34,63 +32,51 @@ LidarscanNode::LidarscanNode(const rclcpp::NodeOptions & options)
   this->declare_parameter<std::string>("terrainmap_topic", "/terrain_map");
   this->declare_parameter<std::string>("gimbal_cmd_topic", "/lidarscan");
   this->declare_parameter<double>("voxel_leaf_size", 0.05);
-  this->declare_parameter<double>("smoothing_factor", 0.15, rcl_interfaces::msg::ParameterDescriptor()
-                                  .set__description("Smoothing factor for gimbal movement (0 to 1). Smaller is smoother.")
-                                  .set__floating_point_range({rcl_interfaces::msg::FloatingPointRange()
-                                  .set__from_value(0.0)
-                                  .set__to_value(1.0)}));
-  this->declare_parameter<double>("obstacle_scan_duration", 2.0, rcl_interfaces::msg::ParameterDescriptor()
-                                  .set__description("Duration to scan each obstacle in seconds."));
+  this->declare_parameter<double>("smoothing_factor", 0.15);
+  this->declare_parameter<double>("obstacle_scan_duration", 2.0);
+  this->declare_parameter<double>("min_obstacle_dimension", 0.3);
+  this->declare_parameter<double>("max_obstacle_dimension", 0.7);
+  this->declare_parameter<double>("pitch_scan_angle", 0.78);
+  this->declare_parameter<double>("yaw_scan_angle", 0.78);
+  this->declare_parameter<double>("idle_scan_speed", 0.7);
+  this->declare_parameter<bool>("clockwise_direction", true);
+  this->declare_parameter<double>("spin_yaw_period", 5.0);
+  this->declare_parameter<double>("spin_pitch_period", 3.0);
 
-  this->declare_parameter<double>("min_obstacle_dimension", 0.3, rcl_interfaces::msg::ParameterDescriptor()
-                                  .set__description("Minimum dimension (X, Y, or Z) of the AABB for a valid obstacle (m)."));
-  this->declare_parameter<double>("max_obstacle_dimension", 0.7, rcl_interfaces::msg::ParameterDescriptor()
-                                  .set__description("Maximum dimension (X, Y, or Z) of the AABB for a valid obstacle (m)."));
-//障碍物的扫描角度
-  this->declare_parameter<double>("pitch_scan_angle",0.78,rcl_interfaces::msg::ParameterDescriptor()
-                                  .set__description("Pitch scan angle (radians)"));
-  this->declare_parameter<double>("yaw_scan_angle",0.78,rcl_interfaces::msg::ParameterDescriptor()
-                                  .set__description("Yaw scan angle (radians)"));
-
+  // 获取参数
   this->get_parameter("map_frame", map_frame_);
   this->get_parameter("base_frame", base_frame_);
   this->get_parameter("gimbal_frame", gimbal_frame_);
   this->get_parameter("scan_speed", scan_speed_);
   this->get_parameter("pitch_scan_speed", pitch_scan_speed_);
   this->get_parameter("min_obstacle_size", min_obstacle_size_);
-  std::string terrainmap_topic;
-  this->get_parameter("terrainmap_topic", terrainmap_topic);
-  std::string gimbal_cmd_topic;
-  this->get_parameter("gimbal_cmd_topic", gimbal_cmd_topic);
-  double voxel_leaf_size;
-  this->get_parameter("voxel_leaf_size", voxel_leaf_size);
   this->get_parameter("smoothing_factor", smoothing_factor_);
   this->get_parameter("obstacle_scan_duration", obstacle_scan_duration_);
   this->get_parameter("min_obstacle_dimension", min_obstacle_dimension_);
   this->get_parameter("max_obstacle_dimension", max_obstacle_dimension_);
   this->get_parameter("pitch_scan_angle", pitch_scan_angle_);
   this->get_parameter("yaw_scan_angle", yaw_scan_angle_);
+  this->get_parameter("idle_scan_speed", idle_scan_speed_);
+  this->get_parameter("clockwise_direction", clockwise_direction_);
+  this->get_parameter("spin_yaw_period", spin_yaw_period_);
+  this->get_parameter("spin_pitch_period", spin_pitch_period_);
+  
+  std::string terrainmap_topic;
+  this->get_parameter("terrainmap_topic", terrainmap_topic);
+  std::string gimbal_cmd_topic;
+  this->get_parameter("gimbal_cmd_topic", gimbal_cmd_topic);
+  double voxel_leaf_size;
+  this->get_parameter("voxel_leaf_size", voxel_leaf_size);
 
-
-  current_obstacles_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
-  previous_obstacles_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
-
+  // 初始化点云处理
+  previous_point_cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
   voxel_filter_.setLeafSize(voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
 
+  // 初始化TF
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  // 初始化扫描相关变量
-  target_yaw_ = 0.0;
-  target_pitch_ = 0.0;
-  scan_offset_yaw_ = 0.0;
-  scan_offset_pitch_ = 0.0;
-  current_sent_yaw_ = 0.0;
-  current_sent_pitch_ = 0.0;
-  current_scan_yaw_speed_ = std::abs(scan_speed_); // 初始速度为正
-  current_scan_pitch_speed_ = std::abs(pitch_scan_speed_); // 初始速度为正
-
-
+  // 创建订阅和发布
   terrainmap_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
     terrainmap_topic, 10,
     std::bind(&LidarscanNode::terrainmapCallback, this, std::placeholders::_1));
@@ -98,13 +84,13 @@ LidarscanNode::LidarscanNode(const rclcpp::NodeOptions & options)
   gimbal_cmd_pub_ = this->create_publisher<auto_aim_interfaces::msg::Send>(
       gimbal_cmd_topic, 10);
 
+  // 创建定时器
   scan_timer_ = this->create_wall_timer(
     std::chrono::milliseconds(50),
     std::bind(&LidarscanNode::scanTimerCallback, this));
 
   RCLCPP_INFO(this->get_logger(), "Lidarscan node initialized");
 }
-
 
 LidarscanNode::~LidarscanNode()
 {
@@ -124,18 +110,20 @@ void LidarscanNode::terrainmapCallback(const sensor_msgs::msg::PointCloud2::Shar
       RCLCPP_WARN(this->get_logger(), "Received empty point cloud");
       return;
     }
-    RCLCPP_DEBUG(this->get_logger(), "Received point cloud with %zu points", cloud->size());
+    
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>());
     voxel_filter_.setInputCloud(cloud);
     voxel_filter_.filter(*filtered_cloud);
-    detectObstacles(filtered_cloud);
+    
+    detectAndClassifyObstacles(filtered_cloud);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "Exception in terrainmap callback: %s", e.what());
   }
 }
 
-void LidarscanNode::detectObstacles(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
+void LidarscanNode::detectAndClassifyObstacles(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 {
+  // 使用欧几里得聚类提取障碍物
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
   ec.setClusterTolerance(0.2);  // m
   ec.setMinClusterSize(10);
@@ -143,150 +131,124 @@ void LidarscanNode::detectObstacles(const pcl::PointCloud<pcl::PointXYZ>::Ptr cl
   ec.setInputCloud(cloud);
   std::vector<pcl::PointIndices> cluster_indices;
   ec.extract(cluster_indices);
-  bool found_new_valid_obstacle = false;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr new_obstacle_list(new pcl::PointCloud<pcl::PointXYZ>());
-
+  
+  std::vector<Obstacle> new_obstacles;
+  
   for (const auto& cluster : cluster_indices) {
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-      pcl::copyPointCloud(*cloud, cluster.indices, *cluster_cloud);
-      if (cluster_cloud->empty()) continue;
-      Eigen::Vector4f centroid;
-      pcl::compute3DCentroid(*cluster_cloud, centroid);
-      bool height_ok = (centroid[2] > 0.1 && centroid[2] < 2.0); // Check height relative to base_link/odom
-      pcl::MomentOfInertiaEstimation<pcl::PointXYZ> feature_extractor;
-      feature_extractor.setInputCloud(cluster_cloud);
-      feature_extractor.compute();
-      pcl::PointXYZ min_point_AABB, max_point_AABB;
-      feature_extractor.getAABB(min_point_AABB, max_point_AABB);
-      float dim_x = max_point_AABB.x - min_point_AABB.x;
-      float dim_y = max_point_AABB.y - min_point_AABB.y;
-      float dim_z = max_point_AABB.z - min_point_AABB.z;
-      float min_dim = std::min({dim_x, dim_y, dim_z});
-      float max_dim = std::max({dim_x, dim_y, dim_z});
-      bool size_ok = (min_dim >= static_cast<float>(min_obstacle_dimension_) &&
-                      max_dim <= static_cast<float>(max_obstacle_dimension_));
-
-      if (height_ok && size_ok) {
-        pcl::PointXYZ obstacle_point;
-        obstacle_point.x = centroid[0];
-        obstacle_point.y = centroid[1];
-        obstacle_point.z = centroid[2]; // Store centroid Z for potential future use, though targeting uses Y/X
-        if (isNewObstacle(obstacle_point)) {
-          new_obstacle_list->push_back(obstacle_point); // Collect all new valid obstacles
-          found_new_valid_obstacle = true;
-          RCLCPP_INFO(
-            this->get_logger(), "New valid obstacle candidate detected at (%.2f, %.2f, %.2f)",
-            obstacle_point.x, obstacle_point.y, obstacle_point.z);
-        }
-      } else {
-         RCLCPP_DEBUG(
-            this->get_logger(), "Cluster rejected (height_ok: %d, size_ok: %d, dims: %.2fx%.2fx%.2f, min:%.2f, max:%.2f, centroid_z: %.2f)",
-            height_ok, size_ok, dim_x, dim_y, dim_z, min_dim, max_dim, centroid[2]);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::copyPointCloud(*cloud, cluster.indices, *cluster_cloud);
+    if (cluster_cloud->empty()) continue;
+    
+    // 计算质心
+    Eigen::Vector4f centroid;
+    pcl::compute3DCentroid(*cluster_cloud, centroid);
+    
+    // 检查高度
+    bool height_ok = (centroid[2] > 0.1 && centroid[2] < 2.0);
+    
+    // 提取AABB特征
+    pcl::MomentOfInertiaEstimation<pcl::PointXYZ> feature_extractor;
+    feature_extractor.setInputCloud(cluster_cloud);
+    feature_extractor.compute();
+    pcl::PointXYZ min_point_AABB, max_point_AABB;
+    feature_extractor.getAABB(min_point_AABB, max_point_AABB);
+    
+    // 计算尺寸
+    float dim_x = max_point_AABB.x - min_point_AABB.x;
+    float dim_y = max_point_AABB.y - min_point_AABB.y;
+    float dim_z = max_point_AABB.z - min_point_AABB.z;
+    float min_dim = std::min({dim_x, dim_y, dim_z});
+    float max_dim = std::max({dim_x, dim_y, dim_z});
+    
+    // 检查尺寸
+    bool size_ok = (min_dim >= static_cast<float>(min_obstacle_dimension_) &&
+                   max_dim <= static_cast<float>(max_obstacle_dimension_));
+    
+    if (height_ok && size_ok) {
+      pcl::PointXYZ obstacle_point;
+      obstacle_point.x = centroid[0];
+      obstacle_point.y = centroid[1];
+      obstacle_point.z = centroid[2];
+      
+      if (isNewObstacle(obstacle_point)) {
+        // 计算障碍物的yaw和pitch角度
+        double yaw = std::atan2(obstacle_point.y, obstacle_point.x);
+        double pitch = 0.0; // 通常pitch设为0，云台会在scan时进行pitch扫描
+        
+        // 创建障碍物对象并添加到列表
+        new_obstacles.emplace_back(obstacle_point, yaw, pitch);
       }
-  } // End for loop over clusters
-
-  { // Lock scope for obstacle list update
-    std::lock_guard<std::mutex> lock(obstacles_mutex_);
-    if (found_new_valid_obstacle) {
-        pcl::copyPointCloud(*new_obstacle_list, *current_obstacles_);
-        if (current_state_ == ScanState::IDLE) {
-            RCLCPP_INFO(this->get_logger(), "New obstacles detected, starting scan sequence.");
-            current_state_ = ScanState::TARGETING;
-            obstacle_scan_index_ = 0;
-        }
-    } else if (current_obstacles_->empty()) {
     }
-    pcl::copyPointCloud(*current_obstacles_, *previous_obstacles_);
+  }
+  
+  // 更新障碍物列表
+  if (!new_obstacles.empty()) {
+    std::lock_guard<std::mutex> lock(obstacles_mutex_);
+    
+    // 将新检测到的障碍物添加到列表
+    obstacles_.insert(obstacles_.end(), new_obstacles.begin(), new_obstacles.end());
+    
+    // 更新障碍物周期和ID
+    updateObstaclesCycle(current_spin_yaw_);
+    assignObstacleIds();
+    
+    if (current_state_ == ScanState::SPIN && !obstacles_.empty()) {
+      // 如果有未扫描的障碍物，查找下一个要扫描的障碍物
+      int next_id = findNextUnscannedObstacle();
+      if (next_id >= 0) {
+        current_obstacle_id_ = next_id;
+        RCLCPP_INFO(this->get_logger(), "Next obstacle to scan: ID %d", current_obstacle_id_);
+      }
+    }
+  }
+  
+  // 更新前一帧点云，用于isNewObstacle比较
+  pcl::copyPointCloud(*cloud, *previous_point_cloud_);
+}
+
+void LidarscanNode::updateObstaclesCycle(double current_yaw)
+{
+  // 根据当前yaw值更新障碍物的周期
+  for (auto& obstacle : obstacles_) {
+    // 判断障碍物是在当前周期还是下一周期
+    // 根据旋转方向和当前yaw角度判断
+    if (clockwise_direction_) {
+      // 顺时针旋转：如果障碍物yaw小于当前yaw（已经扫过），则放入下一周期
+      obstacle.cycle = (obstacle.yaw > current_yaw);
+    } else {
+      // 逆时针旋转：如果障碍物yaw大于当前yaw（已经扫过），则放入下一周期
+      obstacle.cycle = (obstacle.yaw < current_yaw);
+    }
   }
 }
-void LidarscanNode::scanTimerCallback()
+
+void LidarscanNode::assignObstacleIds()
 {
-  double dt = 0.05; // Approximate time step
-
-  switch (current_state_) {
-    case ScanState::IDLE:
-      {
-        std::lock_guard<std::mutex> lock(obstacles_mutex_);
-        if (!current_obstacles_->empty()) {
-          RCLCPP_INFO(this->get_logger(), "IDLE: Obstacles available, transitioning to TARGETING.");
-          current_state_ = ScanState::TARGETING;
-          obstacle_scan_index_ = 0;
-        }
-      }
-      break;
-    case ScanState::TARGETING:
-      {
-        std::lock_guard<std::mutex> lock(obstacles_mutex_);
-        if (obstacle_scan_index_ < current_obstacles_->size()) {
-          const auto& target_point = current_obstacles_->points[obstacle_scan_index_];
-          target_yaw_ = std::atan2(target_point.y, target_point.x);
-          target_pitch_ = 0.0;
-          RCLCPP_INFO(
-            this->get_logger(), "TARGETING: Obstacle %zu at XYZ(%.2f, %.2f, %.2f). Target angles (yaw:%.2f, pitch:%.2f). Moving.",
-            obstacle_scan_index_, target_point.x, target_point.y, target_point.z, target_yaw_, target_pitch_);
-          current_state_ = ScanState::MOVING_TO_OBSTACLE;
-        } else {
-          RCLCPP_INFO(this->get_logger(), "TARGETING: No more obstacles or index out of bounds. Restarting obstacle list.");
-          obstacle_scan_index_ = 0; // 循环检查障碍物
-        }
-      }
-      break;
-    case ScanState::MOVING_TO_OBSTACLE:
-      {
-        controlGimbal(target_yaw_, target_pitch_);
-        double yaw_error = std::abs(target_yaw_ - current_sent_yaw_);
-        double pitch_error = std::abs(target_pitch_ - current_sent_pitch_);
-        if (yaw_error < 0.05 && pitch_error < 0.05) { // Threshold in radians
-          RCLCPP_INFO(this->get_logger(), "MOVING_TO_OBSTACLE: Reached target. Starting scan phase.");
-          scan_phase_start_time_ = this->now();
-          scan_offset_yaw_ = 0.0; // Reset scan offsets
-          scan_offset_pitch_ = 0.0;
-          current_scan_yaw_speed_ = std::abs(scan_speed_); // Reset scan speeds/direction
-          current_scan_pitch_speed_ = std::abs(pitch_scan_speed_);
-          current_state_ = ScanState::SCANNING_OBSTACLE;
-        } else {
-           RCLCPP_DEBUG(this->get_logger(), "MOVING_TO_OBSTACLE: Moving... Current(%.2f, %.2f), Target(%.2f, %.2f)",
-                       current_sent_yaw_, current_sent_pitch_, target_yaw_, target_pitch_);
-        }
-      }
-      break;
-    case ScanState::SCANNING_OBSTACLE:
-      {
-        rclcpp::Duration elapsed_time = this->now() - scan_phase_start_time_;
-        if (elapsed_time.seconds() >= 3) { // 持续扫描 3 秒
-          RCLCPP_INFO(this->get_logger(), "SCANNING_OBSTACLE: Scan duration %.1fs completed for obstacle %zu.",
-                      elapsed_time.seconds(), obstacle_scan_index_);
-          obstacle_scan_index_ = (obstacle_scan_index_ + 1) % current_obstacles_->size(); // 循环到下一个障碍物
-          current_state_ = ScanState::TARGETING; // 返回到目标状态
-        } else {
-          scan_offset_yaw_ += current_scan_yaw_speed_ * dt;
-          scan_offset_pitch_ += current_scan_pitch_speed_ * dt;
-
-          if (std::abs(scan_offset_yaw_) > yaw_scan_angle_ / 2.0) {
-            current_scan_yaw_speed_ = -current_scan_yaw_speed_;
-            scan_offset_yaw_ = std::clamp(scan_offset_yaw_, -yaw_scan_angle_ / 2.0, yaw_scan_angle_ / 2.0);
-          }
-          if (std::abs(scan_offset_pitch_) > pitch_scan_angle_ / 2.0) {
-            current_scan_pitch_speed_ = -current_scan_pitch_speed_;
-            scan_offset_pitch_ = std::clamp(scan_offset_pitch_, -pitch_scan_angle_ / 2.0, pitch_scan_angle_ / 2.0);
-          }
-
-          controlGimbal(target_yaw_ + scan_offset_yaw_, target_pitch_ + scan_offset_pitch_);
-          RCLCPP_DEBUG(this->get_logger(), "SCANNING_OBSTACLE: Time %.2f/%.1f. Offset(%.2f, %.2f). Sending(%.2f, %.2f)",
-                      elapsed_time.seconds(), 1.5, scan_offset_yaw_, scan_offset_pitch_,
-                      target_yaw_ + scan_offset_yaw_, target_pitch_ + scan_offset_pitch_);
-        }
-      }
-      break;
+  // 给未扫描的障碍物分配ID，从0开始
+  int next_id = 0;
+  
+  // 先处理当前周期的障碍物
+  for (auto& obstacle : obstacles_) {
+    if (obstacle.cycle && !obstacle.scanned) {
+      obstacle.id = next_id++;
+    }
+  }
+  
+  // 再处理下一周期的障碍物
+  for (auto& obstacle : obstacles_) {
+    if (!obstacle.cycle && !obstacle.scanned) {
+      obstacle.id = next_id++;
+    }
   }
 }
 
 bool LidarscanNode::isNewObstacle(const pcl::PointXYZ& point)
 {
-  if (previous_obstacles_->empty()) {
+  if (previous_point_cloud_->empty()) {
     return true;
   }
-  for (const auto& prev_point : previous_obstacles_->points) {
+  
+  for (const auto& prev_point : previous_point_cloud_->points) {
     double dist = std::sqrt(
       std::pow(point.x - prev_point.x, 2) +
       std::pow(point.y - prev_point.y, 2) +
@@ -298,29 +260,161 @@ bool LidarscanNode::isNewObstacle(const pcl::PointXYZ& point)
   return true;
 }
 
-void LidarscanNode::controlGimbal(double target_yaw, double target_pitch)
+int LidarscanNode::findNextUnscannedObstacle()
+{
+  // 寻找下一个未扫描的障碍物ID
+  // 优先扫描当前周期内的障碍物
+  
+  // 先查找当前周期的障碍物
+  for (const auto& obstacle : obstacles_) {
+    if (obstacle.cycle && !obstacle.scanned) {
+      return obstacle.id;
+    }
+  }
+  
+  // 如果当前周期没有未扫描的障碍物，检查下一周期
+  for (const auto& obstacle : obstacles_) {
+    if (!obstacle.cycle && !obstacle.scanned) {
+      return obstacle.id;
+    }
+  }
+  
+  return -1; // 没有找到未扫描的障碍物
+}
+
+void LidarscanNode::scanTimerCallback()
 {
   rclcpp::Time current_time = this->now();
+  
+  switch (current_state_) {
+    case ScanState::SPIN:
+    {
+      // 在SPIN状态下，云台做连续的旋转运动
+      double yaw_direction = clockwise_direction_ ? -1.0 : 1.0;
+      double time_sec = current_time.seconds();
+      
+      // 计算当前的云台角度
+      current_spin_yaw_ = yaw_direction * (M_PI * 0.8) * std::sin(2.0 * M_PI * time_sec / spin_yaw_period_);
+      current_spin_pitch_ = (pitch_scan_angle_ / 2.0) * std::sin(2.0 * M_PI * time_sec / spin_pitch_period_);
+      
+      // 检查是否有未扫描的障碍物
+      bool has_unscanned_obstacle = false;
+      {
+        std::lock_guard<std::mutex> lock(obstacles_mutex_);
+        
+        // 更新障碍物周期
+        updateObstaclesCycle(current_spin_yaw_);
+        assignObstacleIds();
+        
+        // 检查是否有障碍物需要扫描
+        int next_id = findNextUnscannedObstacle();
+        if (next_id >= 0) {
+          has_unscanned_obstacle = true;
+          current_obstacle_id_ = next_id;
+          
+          // 找到对应的障碍物
+          for (auto& obstacle : obstacles_) {
+            if (obstacle.id == current_obstacle_id_) {
+              // 切换到SCAN状态
+              current_state_ = ScanState::SCAN;
+              scan_start_time_ = current_time;
+              RCLCPP_INFO(this->get_logger(), "SPIN: Transitioning to SCAN for obstacle ID %d at yaw=%.2f",
+                          current_obstacle_id_, obstacle.yaw);
+              break;
+            }
+          }
+        }
+      }
+      
+      if (!has_unscanned_obstacle) {
+        // 如果没有障碍物需要扫描，继续执行全局旋转
+        controlGimbal(current_spin_yaw_, current_spin_pitch_);
+        RCLCPP_DEBUG(this->get_logger(), "SPIN: Global scan at yaw=%.2f, pitch=%.2f", 
+                     current_spin_yaw_, current_spin_pitch_);
+      }
+      break;
+    }
+    
+    case ScanState::SCAN:
+    {
+      rclcpp::Duration elapsed_time = current_time - scan_start_time_;
+      
+      // 检查是否完成扫描
+      if (elapsed_time.seconds() >= obstacle_scan_duration_) {
+        // 扫描完成，将障碍物标记为已扫描
+        {
+          std::lock_guard<std::mutex> lock(obstacles_mutex_);
+          for (auto& obstacle : obstacles_) {
+            if (obstacle.id == current_obstacle_id_) {
+              obstacle.scanned = true;
+              RCLCPP_INFO(this->get_logger(), "SCAN: Completed scan for obstacle ID %d, marked as scanned", 
+                          current_obstacle_id_);
+              break;
+            }
+          }
+        }
+        
+        // 返回SPIN状态
+        current_state_ = ScanState::SPIN;
+        RCLCPP_INFO(this->get_logger(), "SCAN: Returning to SPIN state");
+        
+      } else {
+        // 继续扫描当前障碍物
+        double target_yaw = 0.0;
+        double target_pitch = 0.0;
+        
+        {
+          std::lock_guard<std::mutex> lock(obstacles_mutex_);
+          for (const auto& obstacle : obstacles_) {
+            if (obstacle.id == current_obstacle_id_) {
+              target_yaw = obstacle.yaw;
+              target_pitch = obstacle.pitch;
+              break;
+            }
+          }
+        }
+        
+        // 计算扫描偏移量
+        double yaw_direction = clockwise_direction_ ? -1.0 : 1.0;
+        double yaw_offset = yaw_direction * (yaw_scan_angle_ / 2.0) * 
+                          std::sin(2.0 * M_PI * elapsed_time.seconds() / 1.5);
+        double pitch_offset = (pitch_scan_angle_ / 2.0) * 
+                             std::sin(2.0 * M_PI * elapsed_time.seconds() / 1.0);
+        
+        // 控制云台
+        controlGimbal(target_yaw + yaw_offset, target_pitch + pitch_offset);
+        
+        RCLCPP_DEBUG(this->get_logger(), "SCAN: Obstacle ID %d, Time %.2f/%.1f, Target(%.2f, %.2f), Offset(%.2f, %.2f)",
+                    current_obstacle_id_, elapsed_time.seconds(), obstacle_scan_duration_,
+                    target_yaw, target_pitch, yaw_offset, pitch_offset);
+      }
+      break;
+    }
+  }
+}
+
+void LidarscanNode::controlGimbal(double target_yaw, double target_pitch)
+{
+  // 平滑云台控制
   double smoothed_yaw = smoothing_factor_ * target_yaw + (1.0 - smoothing_factor_) * current_sent_yaw_;
   double smoothed_pitch = smoothing_factor_ * target_pitch + (1.0 - smoothing_factor_) * current_sent_pitch_;
+  
   current_sent_yaw_ = smoothed_yaw;
   current_sent_pitch_ = smoothed_pitch;
-
+  
+  // 发布云台控制命令
   auto_aim_interfaces::msg::Send cmd;
-  cmd.header.stamp = current_time;
+  cmd.header.stamp = this->now();
   cmd.header.frame_id = gimbal_frame_;
   cmd.yaw = smoothed_yaw;
   cmd.pitch = smoothed_pitch;
   cmd.tracking = false;
   gimbal_cmd_pub_->publish(cmd);
-
-  RCLCPP_DEBUG(
-    this->get_logger(),
-    "Gimbal Smoothed Control: target(%.3f, %.3f), smoothed(%.3f, %.3f)",
-    target_yaw, target_pitch, smoothed_yaw, smoothed_pitch);
+  
+  RCLCPP_DEBUG(this->get_logger(), "Gimbal Command: yaw=%.3f, pitch=%.3f", smoothed_yaw, smoothed_pitch);
 }
 
-} // namespace lidarscan
+}  // namespace lidarscan
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(lidarscan::LidarscanNode)

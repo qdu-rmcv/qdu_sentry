@@ -37,12 +37,10 @@
 
 namespace lidarscan {
 
-// 定义扫描状态
+// 扫描状态枚举
 enum class ScanState {
-    IDLE,               // 空闲
-    TARGETING,          // 正在选择下一个目标
-    MOVING_TO_OBSTACLE, // 正在移动到目标障碍物
-    SCANNING_OBSTACLE   // 正在对目标障碍物进行详细扫描
+    SPIN,           // 云台的旋转状态
+    SCAN,           // 云台的扫描状态
 };
 
 class LidarscanNode : public rclcpp::Node {
@@ -76,44 +74,61 @@ private:
     pcl::PointCloud<pcl::PointXYZ>::Ptr previous_obstacles_;
     std::mutex obstacles_mutex_;
 
-    // 参数
-    double scan_speed_;             // 扫描摆动速度 (yaw)
-    double pitch_scan_speed_;       // 扫描摆动速度 (pitch)
-    double min_obstacle_size_;      // 用于 isNewObstacle
-    double max_scan_angle_;         // 旧参数，可能不再直接使用，保留以防万一
-    double max_pitch_angle_;        // 旧参数，可能不再直接使用，保留以防万一
-    std::vector<int64_t> expected_armor_ids_;
-    float max_detect_distance_;
-    double smoothing_factor_;       // 平滑因子
-    double obstacle_scan_duration_; // 单个障碍物扫描持续时间
-    double min_obstacle_dimension_; // AABB 最小尺寸限制
-    double max_obstacle_dimension_; // AABB 最大尺寸限制
-    double pitch_scan_angle_;       // 扫描摆动角度 (pitch)
-    double yaw_scan_angle_;         // 扫描摆动角度 (yaw)
+    // 障碍物类定义
+    class Obstacle {
+    public:
+        int id;              // 障碍物ID
+        double yaw;          // 障碍物偏航角
+        double pitch;        // 障碍物俯仰角
+        bool cycle;          // true为当前周期，false为下一周期
+        bool scanned;        // 标记是否已扫描过
+        pcl::PointXYZ point; // 障碍物坐标
 
+        Obstacle(const pcl::PointXYZ& p, double y, double p_angle) 
+            : id(-1), yaw(y), pitch(p_angle), cycle(true), scanned(false), point(p) {}
+    };
+
+    // 障碍物相关
+    std::vector<Obstacle> obstacles_;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr previous_point_cloud_;
+    int current_obstacle_id_{0};    // 当前处理的障碍物ID
+    
+    // 云台状态相关
+    ScanState current_state_{ScanState::SPIN};
+    double current_spin_yaw_{0.0};  // 当前旋转的yaw值
+    double current_spin_pitch_{0.0}; // 当前旋转的pitch值
+    double current_sent_yaw_{0.0};   // 当前已发送的实际yaw值
+    double current_sent_pitch_{0.0}; // 当前已发送的实际pitch值
+    
+    // 扫描相关参数
+    rclcpp::Time scan_start_time_;  // 扫描开始时间
+    double scan_speed_{0.3};        // 扫描速度
+    double pitch_scan_speed_{0.25}; // pitch扫描速度
+    double pitch_scan_angle_{0.78}; // pitch扫描角度
+    double yaw_scan_angle_{0.78};   // yaw扫描角度
+    double idle_scan_speed_{0.5};   // 空闲扫描速度
+    double spin_yaw_period_{5.0};   // 旋转周期
+    double spin_pitch_period_{3.0}; // pitch旋转周期
+    double obstacle_scan_duration_{2.0}; // 障碍物扫描持续时间
+    double smoothing_factor_{0.15}; // 平滑因子
+    bool clockwise_direction_{true}; // 顺时针方向
+    
+    // 点云处理相关
+    double min_obstacle_size_{0.1}; // 障碍物最小尺寸
+    double min_obstacle_dimension_{0.3}; // 最小障碍物维度
+    double max_obstacle_dimension_{0.7}; // 最大障碍物维度
     pcl::VoxelGrid<pcl::PointXYZ> voxel_filter_;
 
+    // 坐标系
     std::string map_frame_;
     std::string base_frame_;
     std::string gimbal_frame_;
-    std::string armors_topic_;
-
-    // 状态变量
-    ScanState current_state_;       // 当前状态机状态
-    bool enemy_detected_;           // 是否检测到敌人
-    size_t obstacle_scan_index_;    // 当前扫描的障碍物索引
-    rclcpp::Time scan_phase_start_time_; // 当前扫描阶段开始时间
-
-    // 目标和扫描控制变量
-    double target_yaw_;              // 当前目标障碍物的中心 yaw
-    double target_pitch_;            // 当前目标障碍物的中心 pitch
-    double scan_offset_yaw_;         // 当前扫描摆动的 yaw 偏移量
-    double scan_offset_pitch_;       // 当前扫描摆动的 pitch 偏移量
-    double current_sent_yaw_;        // 当前已发送的 yaw 值 (用于平滑和状态判断)
-    double current_sent_pitch_;      // 当前已发送的 pitch 值 (用于平滑和状态判断)
-    double current_scan_yaw_speed_;  // 当前扫描摆动速度 (yaw, 带方向)
-    double current_scan_pitch_speed_;// 当前扫描摆动速度 (pitch, 带方向)
-
+    
+    // 方法
+    void detectAndClassifyObstacles(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+    void updateObstaclesCycle(double current_yaw);
+    void assignObstacleIds();
+    int findNextUnscannedObstacle();
 };
 
 }  // namespace lidarscan
