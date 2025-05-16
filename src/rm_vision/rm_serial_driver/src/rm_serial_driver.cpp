@@ -395,8 +395,8 @@ void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr ms
     //       std::cout<<"yaw:"<<packet.yaw<<std::endl;
     // std::cout<<"------------------------------"<<std::endl;
     // std::cout<<"send pitch:"<<packet.gimbal.pit<<std::endl;
-    packet.vx = -move_.vy*0.5;
-    packet.vy = move_.vx*0.5;
+    packet.vx = -move_.vy;
+    packet.vy = move_.vx;
     packet.wz /*= move_.wz */= 0 ;
     packet.checksum=crc16::CRC16_Calc(reinterpret_cast<uint8_t *>(&packet), sizeof(packet)-sizeof(uint16_t), UINT16_MAX); 
 

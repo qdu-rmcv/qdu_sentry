@@ -137,16 +137,16 @@ def generate_launch_description():
                 parameters=[{'use_sim_time': use_sim_time},
                             {'autostart': autostart},
                             {'node_names': lifecycle_nodes}]),
-            Node(
-                package="small_gicp_relocalization",
-                executable="small_gicp_relocalization_node",
-                name="small_gicp_relocalization",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
-            ),
+            # Node(
+            #     package="small_gicp_relocalization",
+            #     executable="small_gicp_relocalization_node",
+            #     name="small_gicp_relocalization",
+            #     output="screen",
+            #     respawn=use_respawn,
+            #     respawn_delay=2.0,
+            #     parameters=[configured_params],
+            #     arguments=["--ros-args", "--log-level", log_level],
+            # ),
         ]
     )
 
@@ -173,12 +173,12 @@ def generate_launch_description():
                 parameters=[{'use_sim_time': use_sim_time,
                              'autostart': autostart,
                              'node_names': lifecycle_nodes}]),
-            ComposableNode(
-                package="small_gicp_relocalization",
-                plugin="small_gicp_relocalization::SmallGicpRelocalizationNode",
-                name="small_gicp_relocalization",
-                parameters=[configured_params],
-            ),
+            # ComposableNode(
+            #     package="small_gicp_relocalization",
+            #     plugin="small_gicp_relocalization::SmallGicpRelocalizationNode",
+            #     name="small_gicp_relocalization",
+            #     parameters=[configured_params],
+            # ),
         ],
     )
     # while True:
