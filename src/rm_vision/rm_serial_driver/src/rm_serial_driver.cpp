@@ -336,7 +336,7 @@ void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_y
 
   chassis_to_gimbal.transform.translation.x = 0.0;
   chassis_to_gimbal.transform.translation.y = 0.0;
-  chassis_to_gimbal.transform.translation.z = 0.0;
+  chassis_to_gimbal.transform.translation.z = 0.35;
 
   tf2::Quaternion q_chassis_gimbal;
   q_chassis_gimbal.setRPY(0, 0, -livox_yaw+chassis_yaw_offset);
@@ -345,27 +345,9 @@ void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_y
   chassis_to_gimbal.transform.rotation.z = q_chassis_gimbal.z();
   chassis_to_gimbal.transform.rotation.w = q_chassis_gimbal.w();
 
-  // 添加额外的变换 - 从 gimbal_odom 到 livox_frame
-  geometry_msgs::msg::TransformStamped gimbal_to_livox;
-  gimbal_to_livox.header.stamp = now;
-  gimbal_to_livox.header.frame_id = "yaw_link";
-  gimbal_to_livox.child_frame_id = "livox_frame";
-  
-  // 根据 sentry.urdf.xacro 中的定义，设置相应的转换
-  gimbal_to_livox.transform.translation.x = 0.0;
-  gimbal_to_livox.transform.translation.y = 0.07;
-  gimbal_to_livox.transform.translation.z = 0.2;
-  
-  tf2::Quaternion q_gimbal_livox;
-  q_gimbal_livox.setRPY(0, 0, 0);
-  gimbal_to_livox.transform.rotation.x = q_gimbal_livox.x();
-  gimbal_to_livox.transform.rotation.y = q_gimbal_livox.y();
-  gimbal_to_livox.transform.rotation.z = q_gimbal_livox.z();
-  gimbal_to_livox.transform.rotation.w = q_gimbal_livox.w();
 
   tf_broadcaster_->sendTransform(base_to_chassis);
   tf_broadcaster_->sendTransform(chassis_to_gimbal);
-  tf_broadcaster_->sendTransform(gimbal_to_livox);
 }
 
 void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr msg)
@@ -390,11 +372,12 @@ void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr ms
     //bool t=msg->tracking;
     packet.pitch=RMSerialDriver::pitch_trans(msg->pitch);
     packet.yaw=RMSerialDriver::pitch_trans(msg->yaw);
-    // std::cout<<"-----------------------------"<<std::endl;
+     std::cout<<"-----------------------------"<<std::endl;
     //       std::cout<<"pitch:"<<packet.pitch<<std::endl;
     //       std::cout<<"yaw:"<<packet.yaw<<std::endl;
     // std::cout<<"------------------------------"<<std::endl;
     // std::cout<<"send pitch:"<<packet.gimbal.pit<<std::endl;
+    std::cout<<"send yaw:"<<packet.vx<<std::endl;
     packet.vx = -move_.vy;
     packet.vy = move_.vx;
     packet.wz /*= move_.wz */= 0 ;
@@ -403,8 +386,8 @@ void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr ms
     // 打印 data 结构体中的 xyz 和 yaw 值
     // std::cout << "xyz: (" << packet.x << ", " << packet.y << ", " << packet.z << ")" << std::endl;
     // std::cout << "pitch: " << packet.pitch << "yaw: " << packet.yaw << std::endl;
-    // RCLCPP_INFO(get_logger(), "[Send] aim_x %f!", packet.x);
-    // RCLCPP_INFO(get_logger(), "[Send] aim_y %f!", packet.y);
+    // RCLCPP_INFO(get_logger(), "[Send] aim_x %f!", packet.vx);
+    // RCLCPP_INFO(get_logger(), "[Send] aim_y %f!", packet.vy);
     // RCLCPP_INFO(get_logger(), "[Send] aim_z %f!", packet.z);
 
     // RCLCPP_INFO(get_logger(), "-------------------------------------------------------------");

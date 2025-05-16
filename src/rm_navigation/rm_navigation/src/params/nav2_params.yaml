@@ -128,7 +128,7 @@ controller_server:
   ros__parameters:
     use_sim_time: False
     odom_topic: odometry
-    controller_frequency: 50.0  # 控制频率为50Hz，更新非常快
+    controller_frequency: 50.0       # 控制频率为50Hz，更新非常快
     min_x_velocity_threshold: 0.001  # 最小速度阈值，低于此值被视为静止
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
@@ -187,7 +187,7 @@ controller_server:
 
       # Obstacles
 
-      min_obstacle_dist: 0.4 # This value must also include our robot radius, since footprint_model is set to "point".
+      min_obstacle_dist: 0.04 # This value must also include our robot radius, since footprint_model is set to "point".
       inflation_dist: 0.26
       include_costmap_obstacles: True
       costmap_obstacles_behind_robot_dist: 1.0
@@ -206,14 +206,14 @@ controller_server:
       weight_max_vel_x: 1.0
       weight_max_vel_y: 1.0
       weight_max_vel_theta: 1.0
-      weight_acc_lim_x: 1.0
-      weight_acc_lim_y: 1.0
-      weight_acc_lim_theta: 1.0
+      weight_acc_lim_x: 1.5
+      weight_acc_lim_y: 1.5
+      weight_acc_lim_theta: 1.5
       weight_kinematics_nh: 1.0 # WE HAVE A HOLONOMIC ROBOT, JUST ADD A SMALL PENALTY
       weight_kinematics_forward_drive: 1.0
       weight_kinematics_turning_radius: 1.0
       weight_optimaltime: 1.0 # must be > 0
-      weight_shortest_path: 0.0
+      weight_shortest_path: 5.0
       weight_obstacle: 100.0
       weight_inflation: 0.2
       weight_dynamic_obstacle: 10.0

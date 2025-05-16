@@ -26,9 +26,6 @@ GimbalsendNode::GimbalsendNode(const rclcpp::NodeOptions & options)
   mode_switch_time_(this->now()),
   logger_(get_logger())
 {
-
-
-
   this->declare_parameter<std::string>("lidarscan_topic", "/lidarscan");
   this->declare_parameter<std::string>("tracker_topic", "/tracker/send");
   this->declare_parameter<std::string>("gimbal_pub_topic", "/gimbalcontrol");

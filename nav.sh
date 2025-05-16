@@ -16,7 +16,7 @@ cmds=(
 	# "ros2 launch small_gicp_relocalization small_gicp_relocalization_launch.py"
 
 	"ros2 launch pointcloud_to_laserscan pointcloud_to_laserscan_launch.py"
-	"ros2 launch lidarscan lidarscan.launch.py"
+	# "ros2 launch lidarscan lidarscan.launch.py"
 
 	"ros2 launch gimbalsend gimbalsend.launch.py"
 	# "ros2 run rm_decision rm_decision_node"
