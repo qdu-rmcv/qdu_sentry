@@ -8,10 +8,10 @@ cmds=(
 	"ros2 launch point_lio point_lio.launch.py"
 	"ros2 launch sensor_scan_generation sensor_scan_generation.launch.py"
 	"sleep 3 &&  ros2 launch loam_interface loam_interface_launch.py"
-	"sleep 3 && ros2 launch icp_registration icp.launch.py" #yaml
-	"ros2 launch terrain_analysis terrain_analysis_launch.py"
-	"ros2 launch lidarscan lidarscan.launch.py"
-	"ros2 launch gimbalsend gimbalsend.launch.py"
+	# "sleep 3 && ros2 launch icp_registration icp.launch.py" #yaml
+	# "ros2 launch terrain_analysis terrain_analysis_launch.py"
+	# "ros2 launch lidarscan lidarscan.launch.py"
+	# "ros2 launch gimbalsend gimbalsend.launch.py"
 	# "rqt_graph"
 	)
 

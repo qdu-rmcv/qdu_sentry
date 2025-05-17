@@ -89,6 +89,10 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
   move_vec_sub= this->create_subscription<geometry_msgs::msg::Twist>
         ("/cmd_vel",rclcpp::SensorDataQoS(),std::bind(&RMSerialDriver::get_classic, this, std::placeholders::_1));
 
+  // send_timer_ = this->create_timer(
+  //     std::chrono::milliseconds(500), // 2 Hz
+  //     std::bind(&RMSerialDriver::sendData, this, std::placeholders::_1));
+
   send_sub_ = this->create_subscription<auto_aim_interfaces::msg::Send>(
       "/gimbalcontrol", rclcpp::SensorDataQoS(),
       std::bind(&RMSerialDriver::sendData, this, std::placeholders::_1));
@@ -380,7 +384,7 @@ void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr ms
     std::cout<<"send yaw:"<<packet.vx<<std::endl;
     packet.vx = -move_.vy;
     packet.vy = move_.vx;
-    packet.wz /*= move_.wz */= 0 ;
+    packet.wz = /*move_.wz*0.5 */ 0 ;
     packet.checksum=crc16::CRC16_Calc(reinterpret_cast<uint8_t *>(&packet), sizeof(packet)-sizeof(uint16_t), UINT16_MAX); 
 
     // 打印 data 结构体中的 xyz 和 yaw 值
