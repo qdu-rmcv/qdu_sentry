@@ -89,13 +89,13 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
   move_vec_sub= this->create_subscription<geometry_msgs::msg::Twist>
         ("/cmd_vel",rclcpp::SensorDataQoS(),std::bind(&RMSerialDriver::get_classic, this, std::placeholders::_1));
 
-  // send_timer_ = this->create_timer(
-  //     std::chrono::milliseconds(500), // 2 Hz
+  // send_sub_ = this->create_subscription<auto_aim_interfaces::msg::Send>(
+  //     "/gimbalcontrol", rclcpp::SensorDataQoS(),
   //     std::bind(&RMSerialDriver::sendData, this, std::placeholders::_1));
-
-  send_sub_ = this->create_subscription<auto_aim_interfaces::msg::Send>(
-      "/gimbalcontrol", rclcpp::SensorDataQoS(),
-      std::bind(&RMSerialDriver::sendData, this, std::placeholders::_1));
+  //修改串口为持续发送
+  gimbal_control_send_timer_ = this->create_wall_timer(
+      std::chrono::milliseconds(50), // 20 Hz, adjust as needed
+      std::bind(&RMSerialDriver::sendData, this));
 
   // target_sub_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
   //   "/tracker/target", rclcpp::SensorDataQoS(),
@@ -354,7 +354,9 @@ void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_y
   tf_broadcaster_->sendTransform(chassis_to_gimbal);
 }
 
-void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr msg)
+// Modify the signature and implementation of sendData
+// void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr msg)
+void RMSerialDriver::sendData()
 {
   const static std::map<std::string, uint8_t> id_unit8_map{
     {"", 0},  {"outpost", 0}, {"1", 1}, {"1", 1},     {"2", 2},
@@ -369,13 +371,16 @@ void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr ms
     // packet.z = msg->position.z;
     //packet.v_yaw = msg->v_yaw;
   
-    if(msg->tracking==true)
+    // Use member variables instead of msg->
+    // Ensure these member variables (e.g., gimbal_tracking_, gimbal_pitch_, gimbal_yaw_)
+    // are declared in the header and updated elsewhere in your code.
+    if(gimbal_tracking_ == true)
     {
       packet.notice=(1<<1);
     }
     //bool t=msg->tracking;
-    packet.pitch=RMSerialDriver::pitch_trans(msg->pitch);
-    packet.yaw=RMSerialDriver::pitch_trans(msg->yaw);
+    packet.pitch=RMSerialDriver::pitch_trans(gimbal_pitch_);
+    packet.yaw=RMSerialDriver::pitch_trans(gimbal_yaw_);
      std::cout<<"-----------------------------"<<std::endl;
     //       std::cout<<"pitch:"<<packet.pitch<<std::endl;
     //       std::cout<<"yaw:"<<packet.yaw<<std::endl;
@@ -407,9 +412,15 @@ void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Send::SharedPtr ms
     serial_driver_->port()->send(data);
 
     std_msgs::msg::Float64 latency;
-    latency.data = (this->now() - msg->header.stamp).seconds() * 1000.0;
-    RCLCPP_DEBUG_STREAM(get_logger(), "Total latency: " + std::to_string(latency.data) + "ms");
-    latency_pub_->publish(latency);
+    // Update latency calculation if gimbal_data_stamp_ is maintained
+    // For example, if gimbal_data_stamp_ stores the timestamp of the latest gimbal data update
+    if (gimbal_data_stamp_.seconds() > 0) { // Check if the timestamp is valid
+        latency.data = (this->now() - gimbal_data_stamp_).seconds() * 1000.0;
+        RCLCPP_DEBUG_STREAM(get_logger(), "Total latency: " + std::to_string(latency.data) + "ms");
+        latency_pub_->publish(latency);
+    } else {
+        // RCLCPP_WARN_ONCE(get_logger(), "gimbal_data_stamp_ not set, latency calculation might be inaccurate.");
+    }
 
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Error while sending data: %s", ex.what());

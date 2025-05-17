@@ -73,9 +73,9 @@ private:
     double spin_yaw_speed_;         //云台水平速度
     double spin_pitch_speed_;       //云台点头速度
 
-    std::vector<int>period_;            //当前周期
+    std::vector<int>period_;        //当前周期
     int current_period_;
-    int max_obstacle_period_; // 障碍物的存在周期
+    int max_obstacle_period_;       // 障碍物的存在周期
 };
 }
 #endif  // LIDARSCAN__LIDARSCAN_HPP_

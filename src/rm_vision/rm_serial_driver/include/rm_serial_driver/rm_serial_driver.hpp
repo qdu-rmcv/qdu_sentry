@@ -61,7 +61,8 @@ private:
 
   void receiveData();
 
-  void sendData(const auto_aim_interfaces::msg::Send::SharedPtr msg);
+  // void sendData(const auto_aim_interfaces::msg::Send::SharedPtr msg); // Old signature
+  void sendData(); // New signature for timer callback
   void get_classic(const geometry_msgs::msg::Twist twi);
 
   void reopenPort();
@@ -118,6 +119,11 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
 
   rclcpp::TimerBase::SharedPtr send_timer_;
+  rclcpp::TimerBase::SharedPtr gimbal_control_send_timer_;
+  bool gimbal_tracking_ = false;
+  float gimbal_pitch_ = 0.0;
+  float gimbal_yaw_ = 0.0;
+  rclcpp::Time gimbal_data_stamp_;
 
   std::thread receive_thread_;
 
