@@ -13,7 +13,7 @@ controller_server:
       dt_hysteresis: 0.1
       max_samples: 500
       global_plan_overwrite_orientation: False
-      allow_init_with_backwards_motion: False
+      allow_init_with_backwards_motion: true
       max_global_plan_lookahead_dist: 3.0
       global_plan_viapoint_sep: 0.3
       global_plan_prune_distance: 1.0

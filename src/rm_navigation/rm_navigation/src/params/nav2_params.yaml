@@ -39,21 +39,21 @@
 #     z_short: 0.05
 #     scan_topic: scan
 
-small_gicp_relocalization:
-  ros__parameters:
-    use_sim_time: false
-    num_threads: 4
-    num_neighbors: 20
-    global_leaf_size: 0.15
-    registered_leaf_size: 0.05
-    max_dist_sq: 3.0
-    map_frame: "map"
-    odom_frame: "odom"
-    base_frame: "base_link"
-    robot_base_frame: "chassis"
-    lidar_frame: "livox_frame"
-    # The prior_pcd_file does not need to be specified since it going to be set by defaults in launch.
-    prior_pcd_file: "src/rm_navigation/rm_perception/fast_lio/PCD/map_1.pcd"
+# small_gicp_relocalization:
+#   ros__parameters:
+#     use_sim_time: false
+#     num_threads: 4
+#     num_neighbors: 20
+#     global_leaf_size: 0.15
+#     registered_leaf_size: 0.05
+#     max_dist_sq: 3.0
+#     map_frame: "map"
+#     odom_frame: "odom"
+#     base_frame: "base_link"
+#     robot_base_frame: "chassis"
+#     lidar_frame: "livox_frame"
+#     # The prior_pcd_file does not need to be specified since it going to be set by defaults in launch.
+#     prior_pcd_file: "src/rm_navigation/rm_perception/fast_lio/PCD/map_1.pcd"
 
 bt_navigator:
   ros__parameters:
@@ -128,7 +128,7 @@ controller_server:
   ros__parameters:
     use_sim_time: False
     odom_topic: odometry
-    controller_frequency: 50.0  # 控制频率为50Hz，更新非常快
+    controller_frequency: 50.0       # 控制频率为50Hz，更新非常快
     min_x_velocity_threshold: 0.001  # 最小速度阈值，低于此值被视为静止
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
@@ -180,14 +180,14 @@ controller_server:
         type: "point"
       # GoalTolerance
 
-      xy_goal_tolerance: 0.2
+      xy_goal_tolerance: 0.15
       yaw_goal_tolerance: 6.28
       free_goal_vel: False
       complete_global_plan: True
 
       # Obstacles
 
-      min_obstacle_dist: 0.4 # This value must also include our robot radius, since footprint_model is set to "point".
+      min_obstacle_dist: 0.04 # This value must also include our robot radius, since footprint_model is set to "point".
       inflation_dist: 0.26
       include_costmap_obstacles: True
       costmap_obstacles_behind_robot_dist: 1.0
@@ -206,14 +206,14 @@ controller_server:
       weight_max_vel_x: 1.0
       weight_max_vel_y: 1.0
       weight_max_vel_theta: 1.0
-      weight_acc_lim_x: 1.0
-      weight_acc_lim_y: 1.0
-      weight_acc_lim_theta: 1.0
+      weight_acc_lim_x: 1.5
+      weight_acc_lim_y: 1.5
+      weight_acc_lim_theta: 1.5
       weight_kinematics_nh: 1.0 # WE HAVE A HOLONOMIC ROBOT, JUST ADD A SMALL PENALTY
       weight_kinematics_forward_drive: 1.0
       weight_kinematics_turning_radius: 1.0
       weight_optimaltime: 1.0 # must be > 0
-      weight_shortest_path: 0.0
+      weight_shortest_path: 5.0
       weight_obstacle: 100.0
       weight_inflation: 0.2
       weight_dynamic_obstacle: 10.0
@@ -382,7 +382,7 @@ planner_server:
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_smac_planner/SmacPlannerHybrid"
-      tolerance: 0.5                      # 如果无法到达精确位置的规划容差，单位：米
+      tolerance: 0.15                      # 如果无法到达精确位置的规划容差，单位：米
       use_astar: true                     # 是否使用A*算法
       allow_unknown: true                 # 允许在未知空间中行驶
       downsample_costmap: false           # 是否对地图进行下采样

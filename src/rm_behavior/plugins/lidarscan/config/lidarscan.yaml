@@ -5,20 +5,24 @@
     base_frame: "base_link"         # 机器人底盘坐标系
     gimbal_frame: "gimbal_link"     # 云台坐标系
 
-    # 扫描参数
-    scan_speed: 0.2                 # 障碍物扫描时的 Yaw 摆动速度 (rad/s)
-    pitch_scan_speed: 0.6           # 障碍物扫描时的 Pitch 摆动速度 (rad/s)
-    min_obstacle_size: 0.1          # isNewObstacle 判断阈值 (m)
-    obstacle_scan_duration: 1.0     # 单个障碍物扫描持续时间 (s)
-    obstacle_scan_yaw_range: 0.524  # 障碍物扫描 Yaw 总范围 (rad, 约30度)
-    obstacle_scan_pitch_range: 0.39 # 障碍物扫描 Pitch 总范围 (rad, 约22度)
-    pitch_scan_angle: 0.78          # 云台 Pitch 扫描角度 (rad, 约45度)
-    yaw_scan_angle: 0.78            # 云台 Yaw 扫描角度 (rad, 约45度)
-
     # 点云处理参数
     voxel_leaf_size: 0.05           # 点云体素滤波叶片大小 (m)
-    min_obstacle_dimension: 0.15     # AABB 最小尺寸限制 (m)
-    max_obstacle_dimension: 0.75     # AABB 最大尺寸限制 (m)
+    min_obstacle_dimension: 0.15    # AABB 最小尺寸限制 (m)
+    max_obstacle_dimension: 0.75    # AABB 最大尺寸限制 (m)
+    min_obstacle_size: 0.1          # isNewObstacle 判断阈值 (m)
+
+    # 扫描参数
+    scan_speed: 0.1                 # 障碍物扫描时的 Yaw 摆动速度 (rad/s)
+    pitch_scan_speed: 0.6           # 障碍物扫描时的 Pitch 摆动速度 (rad/s)
+    obstacle_scan_duration: 1.0     # 单个障碍物扫描持续时间 (s)
+    pitch_scan_angle: 0.78          # 云台 Pitch 扫描角度 (rad, 约45度)
+    yaw_scan_angle: 0.78            # 云台 Yaw 扫描角度 (rad, 约45度)
+    clockwise_direction: true       # 云台扫描方向 (true: 顺时针, false: 逆时针)
+    
+    # 周期管理参数
+    spin_yaw_period: 5.0            # Yaw 旋转周期 (s)
+    spin_pitch_period: 3.0          # Pitch 旋转周期 (s)
+    max_cycle_count: 3              # 障碍物最大周期计数，超过此值将被删除
 
     # 话题参数
     terrainmap_topic: "/terrain_map" # 地形点云话题

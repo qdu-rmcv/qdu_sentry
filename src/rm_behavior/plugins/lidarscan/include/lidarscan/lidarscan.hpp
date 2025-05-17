@@ -20,7 +20,7 @@
 #include <vector>
 #include <mutex>
 #include <queue>
-#include <chrono> // For timing
+#include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -34,15 +34,14 @@
 #include "pcl/common/centroid.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/buffer.h"
+#include "lidarscan/pc_process.hpp"  // 新增头文件引用
 
 namespace lidarscan {
 
-// 定义扫描状态
+// 扫描状态枚举
 enum class ScanState {
-    IDLE,               // 空闲
-    TARGETING,          // 正在选择下一个目标
-    MOVING_TO_OBSTACLE, // 正在移动到目标障碍物
-    SCANNING_OBSTACLE   // 正在对目标障碍物进行详细扫描
+    SPIN,           // 云台的旋转状态
+    SCAN,           // 云台的扫描状态
 };
 
 class LidarscanNode : public rclcpp::Node {
@@ -54,66 +53,87 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr terrainmap_sub_;
     void terrainmapCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
-    rclcpp::Subscription<auto_aim_interfaces::msg::Armors>::SharedPtr armors_sub_;
-    void armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr msg);
-
-    rclcpp::Publisher<auto_aim_interfaces::msg::Send>::SharedPtr
-        gimbal_cmd_pub_;
+    rclcpp::Publisher<auto_aim_interfaces::msg::Send>::SharedPtr gimbal_cmd_pub_;
 
     rclcpp::TimerBase::SharedPtr scan_timer_;
     void scanTimerCallback();
-
-    void detectObstacles(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
-    bool isNewObstacle(const pcl::PointXYZ& point);
-
-    void controlGimbal(double yaw, double pitch);
-    bool isEnemyDetected(const auto_aim_interfaces::msg::Armors::SharedPtr msg);
-
+    
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+    
+    // 点云处理器
+    std::unique_ptr<PointCloudProcessor> pc_processor_;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr current_obstacles_;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr previous_obstacles_;
+    // 障碍物类定义
+    class Obstacle {
+    public:
+        int id;              // 障碍物ID
+        double yaw;          // 障碍物偏航角
+        double pitch;        // 障碍物俯仰角
+        bool cycle;          // true为当前周期，false为下一周期
+        bool scanned;        // 标记是否已扫描过
+        pcl::PointXYZ point; // 障碍物坐标
+        int cycle_count;     // 经历的周期计数，超过限制后删除
+
+        Obstacle(const pcl::PointXYZ& p, double y, double p_angle) 
+            : id(-1), yaw(y), pitch(p_angle), cycle(true), scanned(false), 
+              point(p), cycle_count(0) {}
+    };
+
+    // 障碍物相关
+    std::vector<Obstacle> obstacles_;
     std::mutex obstacles_mutex_;
-
-    // 参数
-    double scan_speed_;             // 扫描摆动速度 (yaw)
-    double pitch_scan_speed_;       // 扫描摆动速度 (pitch)
-    double min_obstacle_size_;      // 用于 isNewObstacle
-    double max_scan_angle_;         // 旧参数，可能不再直接使用，保留以防万一
-    double max_pitch_angle_;        // 旧参数，可能不再直接使用，保留以防万一
-    std::vector<int64_t> expected_armor_ids_;
-    float max_detect_distance_;
-    double smoothing_factor_;       // 平滑因子
-    double obstacle_scan_duration_; // 单个障碍物扫描持续时间
-    double min_obstacle_dimension_; // AABB 最小尺寸限制
-    double max_obstacle_dimension_; // AABB 最大尺寸限制
-    double pitch_scan_angle_;       // 扫描摆动角度 (pitch)
-    double yaw_scan_angle_;         // 扫描摆动角度 (yaw)
-
+    pcl::PointCloud<pcl::PointXYZ>::Ptr previous_cloud_;
+    int current_obstacle_id_{0};   
+    int max_cycle_count_{3};       // 障碍物最大周期计数
+    
+    // 云台状态相关
+    ScanState current_state_{ScanState::SPIN};
+    double current_spin_yaw_{0.0};  
+    double current_spin_pitch_{0.0};
+    double current_sent_yaw_{0.0};  
+    double current_sent_pitch_{0.0};
+    
+    // 周期管理
+    bool cycle_completed_{false};  
+    double cycle_start_yaw_{0.0};  
+    bool is_first_cycle_{true};    
+    
+    // 扫描相关参数
+    rclcpp::Time scan_start_time_; 
+    double scan_speed_{0.3};       
+    double pitch_scan_speed_{0.25};
+    double pitch_scan_angle_{0.78};
+    double yaw_scan_angle_{0.78};  
+    double spin_yaw_period_{5.0};  
+    double spin_pitch_period_{3.0};
+    double obstacle_scan_duration_{2.0};
+    double smoothing_factor_{0.15};
+    bool clockwise_direction_{true};
+    
+    // 点云处理相关
+    double min_obstacle_size_{0.1};
+    double min_obstacle_dimension_{0.3};
+    double max_obstacle_dimension_{0.7};
     pcl::VoxelGrid<pcl::PointXYZ> voxel_filter_;
 
+    // 坐标系
     std::string map_frame_;
     std::string base_frame_;
     std::string gimbal_frame_;
-    std::string armors_topic_;
-
-    // 状态变量
-    ScanState current_state_;       // 当前状态机状态
-    bool enemy_detected_;           // 是否检测到敌人
-    size_t obstacle_scan_index_;    // 当前扫描的障碍物索引
-    rclcpp::Time scan_phase_start_time_; // 当前扫描阶段开始时间
-
-    // 目标和扫描控制变量
-    double target_yaw_;              // 当前目标障碍物的中心 yaw
-    double target_pitch_;            // 当前目标障碍物的中心 pitch
-    double scan_offset_yaw_;         // 当前扫描摆动的 yaw 偏移量
-    double scan_offset_pitch_;       // 当前扫描摆动的 pitch 偏移量
-    double current_sent_yaw_;        // 当前已发送的 yaw 值 (用于平滑和状态判断)
-    double current_sent_pitch_;      // 当前已发送的 pitch 值 (用于平滑和状态判断)
-    double current_scan_yaw_speed_;  // 当前扫描摆动速度 (yaw, 带方向)
-    double current_scan_pitch_speed_;// 当前扫描摆动速度 (pitch, 带方向)
-
+    
+    // 方法
+    void processDetectedObstacles(const std::vector<ObstaclePoint>& detected_obstacles);
+    void detectAndClassifyObstacles(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+    void updateObstaclesCycle(double current_yaw);
+    void assignObstacleIds();
+    int findNextUnscannedObstacle();
+    void resetObstaclesAfterCycle();
+    bool isCompleteCycle(double current_yaw);
+    bool isNewObstacle(const pcl::PointXYZ& point);
+    void cleanupOldObstacles();
+    void controlGimbal(double yaw, double pitch);
+    void logObstaclesState(const std::string& prefix);
 };
 
 }  // namespace lidarscan

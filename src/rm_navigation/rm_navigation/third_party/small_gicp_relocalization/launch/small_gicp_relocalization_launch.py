@@ -34,15 +34,16 @@ def generate_launch_description():
         parameters=[
             {
                 "num_threads": 4,
-                "num_neighbors": 10,
-                "global_leaf_size": 0.25,
-                "registered_leaf_size": 0.25,
-                "max_dist_sq": 1.0,
+                "num_neighbors": 20,
+                "global_leaf_size": 0.1,
+                "registered_leaf_size": 0.05,
+                "max_dist_sq": 3.0,
                 "map_frame": "map",
                 "odom_frame": "odom",
                 "base_frame": "base_link",
                 "lidar_frame": "livox_frame",
                 "prior_pcd_file": "src/rm_navigation/rm_perception/fast_lio/PCD/map_1.pcd",
+                # init_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             }
         ],
     )
