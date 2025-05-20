@@ -23,8 +23,7 @@ namespace rm_behavior
     }
     BT::NodeStatus BuffCondition::tick()
     {
-        // 这里可以添加逻辑来检查buff的状态
-        // 例如，检查buff是否处于激活状态
+        
         bool buff_active = true;  // 假设buff处于激活状态
 
         if (buff_active) {
@@ -41,10 +40,9 @@ namespace rm_behavior
     }
 
 }  // namespace rm_behavior
-#include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE
+#include "behaviortree_cpp/bt_factory.h"
+BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<rm_behavior::BuffCondition>(
-      "Buff");
+    factory.registerNodeType<rm_behavior::BuffCondition>("BuffCheck");
 }
 // RM_BEHAVIOR__PLUGINS__CONDITION__BUFF_HPP_

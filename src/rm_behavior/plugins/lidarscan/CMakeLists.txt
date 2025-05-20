@@ -25,7 +25,6 @@ ament_auto_find_build_dependencies()
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/lidarscan.cpp
-  src/pc_process.cpp
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}

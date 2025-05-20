@@ -61,8 +61,8 @@ private:
 
   void receiveData();
 
-  // void sendData(const auto_aim_interfaces::msg::Send::SharedPtr msg); // Old signature
-  void sendData(); // New signature for timer callback
+  void sendData(const auto_aim_interfaces::msg::Send::SharedPtr msg); // Old signature
+  // void sendData(); // New signature for timer callback
   void get_classic(const geometry_msgs::msg::Twist twi);
 
   void reopenPort();

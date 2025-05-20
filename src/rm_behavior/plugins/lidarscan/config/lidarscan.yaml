@@ -1,33 +1,42 @@
 /**:
   ros__parameters:
-    # 框架参数
-    map_frame: "odom"               # 地图坐标系
-    base_frame: "base_link"         # 机器人底盘坐标系
-    gimbal_frame: "gimbal_link"     # 云台坐标系
 
-    # 点云处理参数
-    voxel_leaf_size: 0.05           # 点云体素滤波叶片大小 (m)
-    min_obstacle_dimension: 0.15    # AABB 最小尺寸限制 (m)
-    max_obstacle_dimension: 0.75    # AABB 最大尺寸限制 (m)
-    min_obstacle_size: 0.1          # isNewObstacle 判断阈值 (m)
-
-    # 扫描参数
-    scan_speed: 0.1                 # 障碍物扫描时的 Yaw 摆动速度 (rad/s)
-    pitch_scan_speed: 0.6           # 障碍物扫描时的 Pitch 摆动速度 (rad/s)
-    obstacle_scan_duration: 1.0     # 单个障碍物扫描持续时间 (s)
-    pitch_scan_angle: 0.78          # 云台 Pitch 扫描角度 (rad, 约45度)
-    yaw_scan_angle: 0.78            # 云台 Yaw 扫描角度 (rad, 约45度)
-    clockwise_direction: true       # 云台扫描方向 (true: 顺时针, false: 逆时针)
+    # 坐标系参数
+    base_frame: "base_link"
+    gimbal_frame: "livox_frame"
     
-    # 周期管理参数
-    spin_yaw_period: 5.0            # Yaw 旋转周期 (s)
-    spin_pitch_period: 3.0          # Pitch 旋转周期 (s)
-    max_cycle_count: 3              # 障碍物最大周期计数，超过此值将被删除
-
-    # 话题参数
-    terrainmap_topic: "/terrain_map" # 地形点云话题
-    gimbal_cmd_topic: "/lidarscan"   # 云台控制命令话题
-
-    # 平滑控制参数
-    smoothing_factor: 0.60           # 云台控制平滑因子 (0~1)
-
+    # 话题配置
+    terrain_map_topic: "/terrain_map" # 地形图话题
+    gimbal_cmd_topic: "/gimbalcontrol"   # 云台控制话题
+    tracker_topic: "/tracker/send"       # 自瞄话题
+    armors_topic: "/detector/armors"     # 装甲板检测话题
+    chassis_topic: "/Chassis"            # 底盘话题
+    
+    # 障碍物检测参数
+    min_bounding_box: 0.5  # 最小障碍物尺寸
+    max_bounding_box: 1.5  # 最大障碍物尺寸
+    min_scan_points: 20    # 最小扫描点数
+    
+    # 云台运动参数
+    spin_yaw_speed: 2.0    # 云台水平旋转速度
+    spin_pitch_speed: 2.0  # 云台俯仰速度
+    scan_yaw_angle: 0.05   # 扫描时的yaw角度范围
+    max_pitch: 0.30        # 最大俯仰角度
+    min_pitch: -0.21       # 最小俯仰角度
+    max_yaw_speed: 2.0     # 最大yaw旋转速度
+    pitch_more_speed: 0.5  # 仰时yaw速度
+    pitch_more_speed: 0.5  # 俯时yaw速度
+    max_scan_period: 3     # 扫描周期数
+    
+    # 平滑参数
+    yaw_smooth_factor: 0.8      # yaw角度平滑系数
+    pitch_smooth_factor: 0.8    # pitch角度平滑系数
+    smooth_window_size: 5       # 平滑窗口大小
+    state_switch_threshold: 0.5 # 状态切换阈值,障碍物合并大小
+    
+    # 自瞄和装甲板参数
+    armor_id: [1, 2, 3, 4, 5, 6, 7, 8, 9] # 期望的装甲板ID
+    max_distance: 8.0       # 最大检测距离
+    tracking_timeout: 1.5   # 自瞄超时时间（秒）
+    transition_delay: 1.0   # 状态切换延迟时间（秒）
+    enemy_distance: 3.0     # 敌人距离期待
