@@ -200,36 +200,7 @@ namespace lidarscan
         return target_yaw;
     }
 
-    // Chassis回调函数
-    void LidarscanNode::chassisCallback(const auto_aim_interfaces::msg::Chassis::SharedPtr msg)
-    {
-        chassis_yaw_offset_ = msg->chassis_yaw_offset;
 
-        if (msg->damaged_armor_id > 0 && msg->damaged_armor_id <= 4)
-        {
-            damaged_armor_detected_ = true;
-            current_damaged_armor_id_ = msg->damaged_armor_id;
-            target_yaw_ = calculateArmorYaw(current_damaged_armor_id_);
-
-            if (current_state_ != DAMAGED_SCAN)
-            {
-                current_state_ = DAMAGED_SCAN;
-                scan_phase_ = 0.0;
-                current_period = max_scan_period_;
-                RCLCPP_INFO(logger_, "检测到受损装甲板ID: %d, 目标yaw: %.2f, 切换到DAMAGED_SCAN状态",
-                            current_damaged_armor_id_, target_yaw_);
-            }
-        }
-        else if (damaged_armor_detected_)
-        {
-            damaged_armor_detected_ = false;
-            if (current_state_ == DAMAGED_SCAN)
-            {
-                current_state_ = SPIN;
-                RCLCPP_INFO(logger_, "切换回SPIN状态");
-            }
-        }
-    }
 
     void LidarscanNode::terrainmapCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
     {
@@ -273,7 +244,6 @@ namespace lidarscan
             pcl::getMinMax3D(*obstacle_cloud, min_pt, max_pt);
             float obstacle_size = (max_pt - min_pt).norm();
 
-            // 合并距离过小的障碍物
             if (obstacle_size >= min_bounding_box && obstacle_size <= max_bounding_box)
             {
                 bool merged = false;
@@ -296,6 +266,7 @@ namespace lidarscan
         std::sort(new_obstacle_yaws.begin(), new_obstacle_yaws.end());
 
         obstacle_yaws_ = new_obstacle_yaws;
+
     }
 
     void LidarscanNode::trackerCallback(const auto_aim_interfaces::msg::Send::SharedPtr msg)
@@ -304,7 +275,7 @@ namespace lidarscan
         last_tracker_msg_ = *msg;
         last_tracker_time_ = this->now();
 
-        RCLCPP_DEBUG(logger_, "自瞄 yaw: %.2f, pitch: %.2f, tracking: %d",
+        RCLCPP_INFO(logger_, "自瞄 yaw: %.2f, pitch: %.2f, tracking: %d",
                      msg->yaw, msg->pitch, msg->tracking);
     }
 
@@ -511,7 +482,7 @@ namespace lidarscan
             updateSmoothedValue(yaw_cmd_queue_, last_tracker_msg_->yaw);
             updateSmoothedValue(pitch_cmd_queue_, last_tracker_msg_->pitch);
 
-            RCLCPP_INFO(logger_, "自瞄");
+            // RCLCPP_INFO(logger_, "自瞄");
             return;
         }
 
@@ -530,8 +501,8 @@ namespace lidarscan
         cmd_msg.tracking = (current_state_ == SCAN || current_state_ == DAMAGED_SCAN);
         gimbal_cmd_pub_->publish(cmd_msg);
 
-        RCLCPP_INFO(logger_, "扫描 yaw=%.2f, pitch=%.2f",
-                    final_yaw, final_pitch);
+        // RCLCPP_INFO(logger_, "扫描 yaw=%.2f, pitch=%.2f",
+        //             final_yaw, final_pitch);
     }
 
     void LidarscanNode::updateGimbalCommand()
@@ -627,11 +598,14 @@ namespace lidarscan
         double yaw_limit_max = closest_obstacle_yaw_ + theta / 2;
         double yaw_limit_min = closest_obstacle_yaw_ - theta / 2;
 
+
+
         static double yaw_direction = 1.0;
         if (current_yaw_ > yaw_limit_max)
         {
             current_yaw_ = yaw_limit_max;
             yaw_direction = -1.0;
+            current_period++;
         }
         else if (current_yaw_ < yaw_limit_min)
         {
@@ -639,6 +613,9 @@ namespace lidarscan
             yaw_direction = 1.0;
             current_period++;
         }
+
+        RCLCPP_INFO(logger_, "扫描障碍物: 中心角度=%.2f, 扫描范围=[%.2f, %.2f], 当前角度=%.2f, 周期=%d/%d",
+                    closest_obstacle_yaw_, yaw_limit_min, yaw_limit_max, current_yaw_, current_period, max_scan_period_);
 
         if (current_period >= max_scan_period_)
         {
@@ -653,6 +630,37 @@ namespace lidarscan
 
         target_yaw_ = current_yaw_;
         target_pitch_ = current_pitch_;
+    }
+
+    // Chassis回调函数
+    void LidarscanNode::chassisCallback(const auto_aim_interfaces::msg::Chassis::SharedPtr msg)
+    {
+        chassis_yaw_offset_ = msg->chassis_yaw_offset;
+
+        if (msg->damaged_armor_id > 0 && msg->damaged_armor_id <= 4)
+        {
+            damaged_armor_detected_ = true;
+            current_damaged_armor_id_ = msg->damaged_armor_id;
+            target_yaw_ = calculateArmorYaw(current_damaged_armor_id_);
+
+            if (current_state_ != DAMAGED_SCAN)
+            {
+                current_state_ = DAMAGED_SCAN;
+                scan_phase_ = 0.0;
+                current_period = max_scan_period_;
+                RCLCPP_INFO(logger_, "检测到受损装甲板ID: %d, 目标yaw: %.2f, 切换到DAMAGED_SCAN状态",
+                            current_damaged_armor_id_, target_yaw_);
+            }
+        }
+        else if (damaged_armor_detected_)
+        {
+            damaged_armor_detected_ = false;
+            if (current_state_ == DAMAGED_SCAN)
+            {
+                current_state_ = SPIN;
+                RCLCPP_INFO(logger_, "切换回SPIN状态");
+            }
+        }
     }
 
     void LidarscanNode::damagedScanState()

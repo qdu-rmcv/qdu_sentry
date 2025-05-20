@@ -27,6 +27,7 @@
     pitch_more_speed: 0.5  # 仰时yaw速度
     pitch_more_speed: 0.5  # 俯时yaw速度
     max_scan_period: 3     # 扫描周期数
+    scan_theta: 0.51       # 合并障碍物角度和扫描角度
     
     # 平滑参数
     yaw_smooth_factor: 0.8      # yaw角度平滑系数
