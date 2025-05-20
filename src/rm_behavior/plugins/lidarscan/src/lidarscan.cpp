@@ -16,7 +16,6 @@
 
 namespace lidarscan
 {
-    // 使用 包络盒 算法，对障碍物信息进行判定
     LidarscanNode::LidarscanNode(const rclcpp::NodeOptions &options)
         : Node("lidarscan_node", options),
           tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock())),
@@ -29,11 +28,13 @@ namespace lidarscan
           last_yaw_cmd_(0.0),
           last_pitch_cmd_(0.0),
           scan_phase_(0.0),
-          current_scan_period_(0),
+          current_period(0),
           damaged_armor_detected_(false),
           enemy_detected_(false),
           dt_(0.0),
           chassis_yaw_offset_(0.0),
+          closest_obstacle_yaw_(0.0),
+          closest_obstacle_distance_(M_PI),
           logger_(get_logger())
     {
 
@@ -214,7 +215,7 @@ namespace lidarscan
             {
                 current_state_ = DAMAGED_SCAN;
                 scan_phase_ = 0.0;
-                current_scan_period_ = max_scan_period_;
+                current_period = max_scan_period_;
                 RCLCPP_INFO(logger_, "检测到受损装甲板ID: %d, 目标yaw: %.2f, 切换到DAMAGED_SCAN状态",
                             current_damaged_armor_id_, target_yaw_);
             }
@@ -295,15 +296,6 @@ namespace lidarscan
         std::sort(new_obstacle_yaws.begin(), new_obstacle_yaws.end());
 
         obstacle_yaws_ = new_obstacle_yaws;
-
-        if (current_state_ == SPIN && !obstacle_yaws_.empty())
-        {
-            target_yaw_ = obstacle_yaws_[0];
-            current_state_ = SCAN;
-            scan_phase_ = 0.0;
-            current_scan_period_ = max_scan_period_;
-            RCLCPP_INFO(this->get_logger(), "->SCAN/yaw: %.2f", target_yaw_);
-        }
     }
 
     void LidarscanNode::trackerCallback(const auto_aim_interfaces::msg::Send::SharedPtr msg)
@@ -312,7 +304,7 @@ namespace lidarscan
         last_tracker_msg_ = *msg;
         last_tracker_time_ = this->now();
 
-        RCLCPP_DEBUG(logger_, "接收到自瞄消息，yaw: %.2f, pitch: %.2f, tracking: %d",
+        RCLCPP_DEBUG(logger_, "自瞄 yaw: %.2f, pitch: %.2f, tracking: %d",
                      msg->yaw, msg->pitch, msg->tracking);
     }
 
@@ -460,6 +452,9 @@ namespace lidarscan
 
     bool LidarscanNode::isYawNearObstacle()
     {
+        bool near_obstacle = false;
+        closest_obstacle_distance_ = M_PI; // 初始化为最大可能值
+
         for (const auto &obstacle_yaw : obstacle_yaws_)
         {
             // 计算角度差，并标准化到[-π, π]
@@ -469,13 +464,20 @@ namespace lidarscan
             while (yaw_diff < -M_PI)
                 yaw_diff += 2 * M_PI;
 
-            // 如果差距小于阈值，则认为靠近障碍物
-            if (std::abs(yaw_diff) < state_switch_threshold_)
+            double abs_diff = std::abs(yaw_diff);
+            if (abs_diff < closest_obstacle_distance_)
             {
-                return true;
+                closest_obstacle_distance_ = abs_diff;
+                closest_obstacle_yaw_ = obstacle_yaw;
+            }
+
+            if (abs_diff < state_switch_threshold_)
+            {
+                near_obstacle = true;
             }
         }
-        return false;
+
+        return near_obstacle;
     }
 
     double LidarscanNode::updateSmoothedValue(std::queue<double> &cmd_queue, double new_value)
@@ -596,10 +598,66 @@ namespace lidarscan
 
     void LidarscanNode::scanState()
     {
+        current_yaw_ += spin_yaw_speed_ * dt_;
+        if (current_yaw_ > M_PI)
+        {
+            current_yaw_ -= 2 * M_PI;
+        }
+        else if (current_yaw_ < -M_PI)
+        {
+            current_yaw_ += 2 * M_PI;
+        }
+
+        static double pitch_direction = 1.0;
+
+        current_pitch_ += pitch_direction * spin_pitch_speed_ * dt_;
+
+        if (current_pitch_ >= max_pitch_)
+        {
+            current_pitch_ = max_pitch_;
+            pitch_direction = -1.0;
+        }
+        else if (current_pitch_ <= min_pitch_)
+        {
+            current_pitch_ = min_pitch_;
+            pitch_direction = 1.0;
+        }
+
+        double theta = asin(1 / enemy_distance_);
+        double yaw_limit_max = closest_obstacle_yaw_ + theta / 2;
+        double yaw_limit_min = closest_obstacle_yaw_ - theta / 2;
+
+        static double yaw_direction = 1.0;
+        if (current_yaw_ > yaw_limit_max)
+        {
+            current_yaw_ = yaw_limit_max;
+            yaw_direction = -1.0;
+        }
+        else if (current_yaw_ < yaw_limit_min)
+        {
+            current_yaw_ = yaw_limit_min;
+            yaw_direction = 1.0;
+            current_period++;
+        }
+
+        if (current_period >= max_scan_period_)
+        {
+            current_period = 0;
+            scan_phase_ = 0.0;
+            current_state_ = SPIN;
+            RCLCPP_INFO(logger_, "SCAN -> SPIN");
+        }
+
+        double yaw_speed_factor = current_pitch_ < 0 ? pitch_less_speed_ : pitch_more_speed_;
+        current_yaw_ += spin_yaw_speed_ * dt_ * (yaw_speed_factor - 1.0);
+
+        target_yaw_ = current_yaw_;
+        target_pitch_ = current_pitch_;
     }
 
     void LidarscanNode::damagedScanState()
     {
+
     }
 
     LidarscanNode::~LidarscanNode() {}

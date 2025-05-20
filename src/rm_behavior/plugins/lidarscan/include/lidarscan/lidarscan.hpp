@@ -28,17 +28,17 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "auto_aim_interfaces/msg/send.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
-#include "auto_aim_interfaces/msg/chassis.hpp"  // 添加Chassis消息头文件
+#include "auto_aim_interfaces/msg/chassis.hpp"
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
 #include "pcl/filters/voxel_grid.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include "pcl/segmentation/extract_clusters.h"
 #include "pcl/common/centroid.h"
-#include "pcl/common/common.h" // 添加头文件，包含getMinMax3D
+#include "pcl/common/common.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/buffer.h"
-#include "Eigen/Core" // 添加Eigen库支持
+#include "Eigen/Core"
 
 namespace lidarscan {
 
@@ -101,16 +101,18 @@ private:
     std::mutex data_mutex_;
 
     // 云台控制
-    scan_state current_state_;  
-    void updateGimbalCommand(); 
-    void spinState(); 
-    void scanState(); 
-    void damagedScanState();    
-    void trackingState();  
+    scan_state current_state_;
+    void updateGimbalCommand();
+    void spinState();
+    void scanState();
+    void damagedScanState();
+    void trackingState();
     bool isYawNearObstacle();
+    // 当前最近障碍物的 yaw 值
+    double closest_obstacle_yaw_; 
+    double closest_obstacle_distance_; // 记录最近障碍物的角度距离
 
-
-    void gimbalsend(); 
+    void gimbalsend();
     void checkStateTransition();
     
     
@@ -123,23 +125,23 @@ private:
 
     bool tracking_mode_;
 
-    double yaw_smooth_factor_;  
+    double yaw_smooth_factor_;
+    
     double pitch_smooth_factor_;
-    double last_yaw_cmd_;  
+    double last_yaw_cmd_;
     double last_pitch_cmd_;
 
-    std::queue<double> yaw_cmd_queue_;   
-    std::queue<double> pitch_cmd_queue_; 
-    int smooth_window_size_;   
+    std::queue<double> yaw_cmd_queue_;
+    std::queue<double> pitch_cmd_queue_;
+    int smooth_window_size_;
     double updateSmoothedValue(std::queue<double>& cmd_queue, double new_value); 
 
-    rclcpp::Time mode_switch_time_;  
-    double scan_transition_delay_;   
+    rclcpp::Time mode_switch_time_;
+    double scan_transition_delay_;
 
-    double scan_phase_;    
-    int current_scan_period_;   
-    int max_scan_period_;  
-    void findenemyState();
+    double scan_phase_;
+    int current_period;
+    int max_scan_period_;
 
     std::string base_frame_;
     std::string gimbal_frame_;
