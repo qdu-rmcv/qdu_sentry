@@ -731,6 +731,7 @@ namespace lidarscan
         static double yaw_direction = 1.0;
         static bool at_boundary = false;
 
+        // 处理上下俯仰
         current_pitch_ += pitch_direction * spin_pitch_speed_ * dt_;
         if (current_pitch_ >= max_pitch_)
         {
@@ -743,6 +744,7 @@ namespace lidarscan
             pitch_direction = 1.0;
         }
 
+        // 定义扫描的角度范围
         double yaw_limit_max = closest_obstacle_yaw_ + scan_theta_ / 2;
         double yaw_limit_min = closest_obstacle_yaw_ - scan_theta_ / 2;
 
@@ -822,6 +824,7 @@ namespace lidarscan
             current_yaw_ = new_yaw;
         }
 
+        // 检查是否完成指定数量的扫描周期
         if (current_period >= max_scan_period_)
         {
             current_period = 0;
