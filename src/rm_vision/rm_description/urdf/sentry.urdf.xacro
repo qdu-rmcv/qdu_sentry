@@ -15,14 +15,15 @@
 
   <!-- 云台部分 -->
   <link name="gimbal_odom" />
-  <joint name="gimbal_joint" type="continuous">
+  <joint name="gimbal_joint" type="fixed">
     <origin xyz="0 0 0.35" rpy="0 0 0" />
     <parent link="chassis" />
     <child link="gimbal_odom" />
   </joint>
 
   <link name="yaw_link" />
-  <joint name="yaw_joint" type="continuous">
+  <joint name="yaw_joint" type="fixed">
+    <origin xyz="0 0 0.35" rpy="0 0 0" />
     <parent link="gimbal_odom" />
     <child link="yaw_link" />
     <axis xyz="0 0 1" />

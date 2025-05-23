@@ -34,9 +34,9 @@ def generate_launch_description():
         parameters=[
             {
                 "num_threads": 4,
-                "num_neighbors": 20,
-                "global_leaf_size": 0.1,
-                "registered_leaf_size": 0.05,
+                "num_neighbors": 10,
+                "global_leaf_size": 0.25,
+                "registered_leaf_size": 0.25,
                 "max_dist_sq": 3.0,
                 "map_frame": "map",
                 "odom_frame": "odom",

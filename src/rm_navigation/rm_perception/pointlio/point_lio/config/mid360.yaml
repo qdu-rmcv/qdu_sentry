@@ -48,7 +48,7 @@
             imu_meas_omg_cov: 0.3                           # 0.1 # 2
             gyr_cov_input: 0.3                              # for IMU as input model
             acc_cov_input: 0.3                              # for IMU as input model
-            plane_thr: 0.15                                  # 0.05, the threshold for plane criteria, the smaller, the flatter a plane
+            plane_thr: 0.2                                  # 0.05, the threshold for plane criteria, the smaller, the flatter a plane
             match_s: 60.0
             ivox_grid_resolution: 0.6
             gravity: [ 0.0, 0.0, -9.810 ]                   # [0.0, 0.0, -9.810] # gravity to be aligned

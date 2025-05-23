@@ -50,4 +50,4 @@
 
 
       tracking_thres: 0
-      lost_time_thres: 1.0
+      lost_time_thres: 3.0
