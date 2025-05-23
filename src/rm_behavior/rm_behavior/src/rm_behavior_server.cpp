@@ -43,12 +43,13 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
   node()->declare_parameter("use_cout_logger", false);
   node()->get_parameter("use_cout_logger", use_cout_logger_);
 
-  subscribe<referee_interfaces::msg::BasicHp>("referee/basic_hp","basic_hp");
-  subscribe<referee_interfaces::msg::Buff>("referee/buff","referee_buff");
-  subscribe<referee_interfaces::msg::EnemyStatus>("referee/enemy_status","referee_enemyStatus");
-  subscribe<referee_interfaces::msg::AllyBot>("referee/ally_bot","referee_allyBot");
-  subscribe<referee_interfaces::msg::Rfid>("referee/rfid","referee_rfid");
-  subscribe<referee_interfaces::msg::GameStatus>("referee/game_status", "referee_gameStatus");
+  auto referee_qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable();
+  subscribe<referee_interfaces::msg::BasicHp>("referee/basic_hp","basic_hp", referee_qos);
+  subscribe<referee_interfaces::msg::Buff>("referee/buff","referee_buff", referee_qos);
+  subscribe<referee_interfaces::msg::EnemyStatus>("referee/enemy_status","referee_enemyStatus", referee_qos);
+  subscribe<referee_interfaces::msg::AllyBot>("referee/ally_bot","referee_allyBot", referee_qos);
+  subscribe<referee_interfaces::msg::Rfid>("referee/rfid","referee_rfid", referee_qos);
+  subscribe<referee_interfaces::msg::GameStatus>("referee/game_status", "referee_gameStatus", referee_qos);
 
   auto detector_qos = rclcpp::SensorDataQoS();
   subscribe<auto_aim_interfaces::msg::Armors>("detector/armors", "detector_armors", detector_qos);

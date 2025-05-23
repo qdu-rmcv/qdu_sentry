@@ -18,7 +18,7 @@ namespace rm_behavior
 {
     EnemyDetectedCondition::EnemyDetectedCondition(
         const std::string &name, const BT::NodeConfig &config)
-        : BT::ConditionNode(name, config)
+        : BT::ConditionNode(name, config), logger_(rclcpp::get_logger("EnemyDetected"))
     {
     }
 

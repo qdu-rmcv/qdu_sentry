@@ -20,37 +20,37 @@ namespace rm_behavior
 {
 
 GameStatusCheckCondition::GameStatusCheckCondition(const std::string & name, const BT::NodeConfig & config)
-: BT::ConditionNode(name, config)
+: BT::ConditionNode(name, config), logger_(rclcpp::get_logger("GameStatusCheck"))
 {
 }
 
 BT::NodeStatus GameStatusCheckCondition::tick()
 {
-  referee_interfaces::msg::GameStatus game_status;
   int time_limit = 0;
-
-  if (!getInput("game_status", game_status)) {
-    RCLCPP_ERROR(logger_, "Failed to get game_status from blackboard");
+  auto msg = getInput<referee_interfaces::msg::GameStatus>("game_status");
+  
+  if (!msg) {
+    RCLCPP_ERROR(logger_, "Game status message is not available");
     return BT::NodeStatus::FAILURE;
   }
 
   if (!getInput("time_limit", time_limit)) {
-    RCLCPP_ERROR(logger_, "Failed to get time_limit from blackboard");
+    RCLCPP_ERROR(logger_, "Failed to get time_limit from input");
     return BT::NodeStatus::FAILURE;
   }
 
   RCLCPP_INFO(logger_, "Checking game state: %d vs time_limit: %d", 
-               game_status.game_progress, time_limit);
+               msg->game_progress, time_limit);
 
   // 检查比赛状态是否匹配
   // 4 比赛开始, 5 比赛结束
-  if (game_status.game_progress == time_limit) {
-    RCLCPP_INFO(logger_, "[GameStatusCheck] 游戏状态 %d 与目标状态匹配 -> SUCCESS", 
-                 game_status.game_progress);
+  if (msg->game_progress == time_limit) {
+    RCLCPP_INFO(logger_, "[GameStatusCheck] 状态 %d 与目标状态匹配 -> SUCCESS", 
+                 msg->game_progress);
     return BT::NodeStatus::SUCCESS;
   } else {
-    RCLCPP_WARN(logger_, "[GameStatusCheck] 游戏状态 %d 与目标状态不匹配 -> FAILURE", 
-                 game_status.game_progress);
+    RCLCPP_WARN(logger_, "[GameStatusCheck] 状态 %d 与目标状态不匹配 -> FAILURE", 
+                 msg->game_progress);
     return BT::NodeStatus::FAILURE;
   }
 }
@@ -58,8 +58,8 @@ BT::NodeStatus GameStatusCheckCondition::tick()
 BT::PortsList GameStatusCheckCondition::providedPorts()
 {
   return {
-    BT::InputPort<referee_interfaces::msg::GameStatus>("game_status", "{@referee_gameStatus}", "裁判系统游戏状态"),
-    BT::InputPort<int>("time_limit", "{@referee_time_limit}", "目标游戏状态(相等时返回成功)")
+    BT::InputPort<referee_interfaces::msg::GameStatus>("game_status", "{referee_gameStatus}", "裁判系统状态"),
+    BT::InputPort<int>("time_limit", 4, "目标状态(相等时返回成功)")
   };
 }
 
