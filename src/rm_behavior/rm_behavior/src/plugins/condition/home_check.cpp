@@ -19,50 +19,46 @@ namespace rm_behavior {
 
 HomeCheckCondition::HomeCheckCondition(const std::string &name,
                                            const BT::NodeConfig &config)
-    : BT::ConditionNode(name, config) {}
+    : BT::ConditionNode(name, config), logger_(rclcpp::get_logger("HomeCheck")) {}
 
 BT::NodeStatus HomeCheckCondition::tick() {
-  referee_interfaces::msg::BasicHp basic_hp;
   int outpost_hp_limit = 0;
   int base_hp_limit = 0;
+  auto msg = getInput<referee_interfaces::msg::BasicHp>("basic_hp");
 
-  if (!getInput("base_hp", basic_hp)) {
-    RCLCPP_ERROR(logger_, "Failed to get basic_hp from blackboard");
+  if (!msg) {
+    RCLCPP_ERROR(logger_, "Basic HP message is not available");
     return BT::NodeStatus::FAILURE;
   }
 
-  if (!getInput("base_hp_limit", base_hp_limit)) {
-    RCLCPP_ERROR(logger_, "Failed to get base_hp_limit from blackboard");
+  getInput("base_hp_limit", base_hp_limit);
+  getInput("outpost_hp_limit", outpost_hp_limit);
+
+  RCLCPP_DEBUG(logger_, "Checking base HP: %d vs limit: %d, outpost HP: %d vs limit: %d",
+               msg->base_hp, base_hp_limit, msg->outpost_hp, outpost_hp_limit);
+
+  // 检查基地和前哨站血量是否满足条件
+  const bool is_base_hp_sufficient = (msg->base_hp > base_hp_limit);
+  const bool is_outpost_hp_sufficient = (msg->outpost_hp > outpost_hp_limit);
+  const bool is_home_safe = is_base_hp_sufficient && is_outpost_hp_sufficient;
+
+  if (is_home_safe) {
+    RCLCPP_DEBUG(logger_, "[HomeCheck] 状态良好: 基地血量=%d, 前哨站血量=%d -> SUCCESS",
+                 msg->base_hp, msg->outpost_hp);
+    return BT::NodeStatus::SUCCESS;
+  } else {
+    RCLCPP_DEBUG(logger_, "[HomeCheck] 状态不及预期: 基地血量=%d, 前哨站血量=%d -> FAILURE",
+                 msg->base_hp, msg->outpost_hp);
     return BT::NodeStatus::FAILURE;
   }
-
-  if (!getInput("outpost_hp_limit", outpost_hp_limit)) {
-    RCLCPP_ERROR(logger_, "Failed to get outpost_hp_limit from blackboard");
-    return BT::NodeStatus::FAILURE;
-  }
-
-  RCLCPP_INFO(logger_, "[HomeCheck] 状态检查: 基地血量=%d, 前哨站血量=%d",
-              basic_hp.base_hp, basic_hp.outpost_hp);
-
-  if (basic_hp.base_hp <= base_hp_limit || basic_hp.outpost_hp <= outpost_hp_limit) {
-    RCLCPP_WARN(logger_,
-                "[HomeCheck] 状态不及预期:基地血量=%d, 前哨站血量=%d",
-                basic_hp.base_hp, basic_hp.outpost_hp);
-    return BT::NodeStatus::FAILURE;
-  }
-
-  RCLCPP_INFO(logger_, "[HomeCheck] 状态良好: 基地血量=%d, 前哨站血量=%d",
-              basic_hp.base_hp, basic_hp.outpost_hp);
-  return BT::NodeStatus::SUCCESS;
 }
 
 BT::PortsList HomeCheckCondition::providedPorts() {
   return {
       BT::InputPort<referee_interfaces::msg::BasicHp>("basic_hp", "{@basic_hp}",
                                                       "哨兵基本状态信息"),
-      BT::InputPort<int>("base_hp_limit", "{@base_hp_limit}", "基地血量阈值"),
-      BT::InputPort<int>("outpost_hp_limit", "{@outpost_hp_limit}",
-                         "前哨战血量阈值")};
+      BT::InputPort<int>("base_hp_limit", 1000, "基地血量阈值"),
+      BT::InputPort<int>("outpost_hp_limit", 500, "前哨战血量阈值")};
 }
 
 } // namespace rm_behavior

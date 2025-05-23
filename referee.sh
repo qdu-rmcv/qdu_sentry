@@ -38,7 +38,7 @@ publish_game_status() {
         local game_progress=$(random_choice "${GAME_PROGRESS_RANGE[@]}")
         local stage_remain_time=$(generate_random ${STAGE_REMAIN_TIME_RANGE[0]} ${STAGE_REMAIN_TIME_RANGE[1]})
         
-        ros2 topic pub --once /referee/gamestatus referee_interfaces/msg/GameStatus \
+        ros2 topic pub --once /referee/game_status referee_interfaces/msg/GameStatus \
         "{game_progress: $game_progress, stage_remain_time: $stage_remain_time}"
         
         sleep 0.5
@@ -53,7 +53,7 @@ publish_basic_hp() {
         local outpost_hp=$(generate_random ${OUTPOST_HP_RANGE[0]} ${OUTPOST_HP_RANGE[1]})
         local projectile_allowance=$(generate_random ${PROJECTILE_ALLOWANCE_RANGE[0]} ${PROJECTILE_ALLOWANCE_RANGE[1]})
         
-        ros2 topic pub --once /referee/basichp referee_interfaces/msg/BasicHp \
+        ros2 topic pub --once /referee/basic_hp referee_interfaces/msg/BasicHp \
         "{sentry_hp: $sentry_hp, base_hp: $base_hp, outpost_hp: $outpost_hp, projectile_allowance_17mm: $projectile_allowance}"
         
         sleep 0.5
@@ -76,7 +76,7 @@ publish_ally_bot() {
         local engineer_x=$(generate_random_float ${HERO_POSITION_X_RANGE[0]} ${HERO_POSITION_X_RANGE[1]})
         local engineer_y=$(generate_random_float ${HERO_POSITION_Y_RANGE[0]} ${HERO_POSITION_Y_RANGE[1]})
         
-        ros2 topic pub --once /referee/allybot referee_interfaces/msg/AllyBot \
+        ros2 topic pub --once /referee/ally_bot referee_interfaces/msg/AllyBot \
         "{hero_hp: $hero_hp, hero_position: {x: $hero_x, y: $hero_y, z: 0.0}, \
         standard_3_hp: $standard_3_hp, standard_3_position: {x: $standard_3_x, y: $standard_3_y, z: 0.0}, \
         standard_4_hp: $standard_4_hp, standard_4_position: {x: $standard_4_x, y: $standard_4_y, z: 0.0}, \

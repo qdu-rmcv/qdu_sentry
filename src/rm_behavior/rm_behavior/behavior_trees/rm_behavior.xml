@@ -48,7 +48,8 @@
 <!-- 英雄跟随版本 -->
     <BehaviorTree ID="hero_follow">
         <WhileDoElse>
-            <GameStatusCheck time_limit="4"/>
+            <GameStatusCheck game_status="{@referee_gameStatus}" 
+            time_limit="4"/>
             <WhileDoElse>
                 <StatusCheck sentry_hp_limit="200"
                              projectile_allowance_limit="20"/>
@@ -118,7 +119,7 @@
     <!-- 比赛状态判断, 4 为比赛开始, 5 为比赛结束 -->
     <Condition ID="GameStatusCheck">
         <input_port name="game_status" 
-                    default="{referee_gameStatus}" 
+                    default="{@referee_gameStatus}" 
                     type="referee_interfaces::msg::GameStatus">裁判系统状态</input_port>
         <input_port name="time_limit" default="4" type="int">目标状态(相等时返回成功)</input_port>
     </Condition>

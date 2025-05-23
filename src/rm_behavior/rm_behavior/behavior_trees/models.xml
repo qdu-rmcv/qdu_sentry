@@ -22,12 +22,12 @@
             <input_port name="key_port" type="auto_aim_interfaces::msg::Armors_&lt;std::allocator&lt;void&gt; &gt;" default="{@detector_armors}">Vision detector port on blackboard</input_port>
         </Condition>
         <Condition ID="GameStatusCheck">
-            <input_port name="time_limit" type="int" default="4">目标状态(相等时返回成功)</input_port>
-            <input_port name="game_status" type="referee_interfaces::msg::GameStatus_&lt;std::allocator&lt;void&gt; &gt;" default="{referee_gameStatus}">裁判系统状态</input_port>
+            <input_port name="time_limit" type="int" default="4">目标状态</input_port>
+            <input_port name="game_status" type="referee_interfaces::msg::GameStatus_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_gameStatus}">裁判系统状态</input_port>
         </Condition>
         <Condition ID="HomeCheck">
-            <input_port name="outpost_hp_limit" type="int" default="{@outpost_hp_limit}">前哨战血量阈值</input_port>
-            <input_port name="base_hp_limit" type="int" default="{@base_hp_limit}">基地血量阈值</input_port>
+            <input_port name="outpost_hp_limit" type="int" default="500">前哨战血量阈值</input_port>
+            <input_port name="base_hp_limit" type="int" default="1000">基地血量阈值</input_port>
             <input_port name="basic_hp" type="referee_interfaces::msg::BasicHp_&lt;std::allocator&lt;void&gt; &gt;" default="{@basic_hp}">哨兵基本状态信息</input_port>
         </Condition>
         <Action ID="Nav2Goal">
