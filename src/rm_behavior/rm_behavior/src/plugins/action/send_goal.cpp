@@ -1,7 +1,7 @@
-#include "rm_behavior_tree/plugins/action/send_goal.hpp"
-#include "rm_behavior_tree/bt_conversions.hpp"
+#include "rm_behavior/plugins/action/send_goal.hpp"
+#include "rm_behavior/bt_conversions.hpp"
 
-namespace rm_behavior_tree
+namespace rm_behavior
 {
 
 SendGoalAction::SendGoalAction(
@@ -18,7 +18,7 @@ bool SendGoalAction::setGoal(nav2_msgs::action::NavigateToPose::Goal & goal)
   }
   goal.pose = res.value();
   goal.pose.header.frame_id = "map";
-  goal.pose.header.stamp = rclcpp::Clock().now();
+  goal.pose.header.stamp = now();
 
   // clang-format off
   std::cout << "Goal_pose: [ "
@@ -61,7 +61,7 @@ void SendGoalAction::onHalt()
       else
       {
           RCLCPP_WARN(
-              node_->get_logger(), 
+              logger(), 
               "[SendGoalAction] Goal already in terminal state, not canceling"
           );
       }
@@ -69,27 +69,27 @@ void SendGoalAction::onHalt()
       goal_handle_.reset();
   }
 
-  RCLCPP_INFO(node_->get_logger(), "SendGoalAction has been halted.");
+  RCLCPP_INFO(logger(), "SendGoalAction has been halted.");
 }
 
 BT::NodeStatus SendGoalAction::onResultReceived(const WrappedResult & wr)
 {
   switch (wr.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
-      RCLCPP_INFO(node_->get_logger(), "Success!!!");
+      RCLCPP_INFO(logger(), "Success!!!");
       return BT::NodeStatus::SUCCESS;
       break;
     case rclcpp_action::ResultCode::ABORTED:
-      RCLCPP_INFO(node_->get_logger(), "Goal was aborted");
+      RCLCPP_INFO(logger(), "Goal was aborted");
       return BT::NodeStatus::FAILURE;
       break;
     case rclcpp_action::ResultCode::CANCELED:
-      RCLCPP_INFO(node_->get_logger(), "Goal was canceled");
+      RCLCPP_INFO(logger(), "Goal was canceled");
       std::cout << "Goal was canceled" << '\n';
       return BT::NodeStatus::FAILURE;
       break;
     default:
-      RCLCPP_INFO(node_->get_logger(), "Unknown result code");
+      RCLCPP_INFO(logger(), "Unknown result code");
       return BT::NodeStatus::FAILURE;
       break;
   }
@@ -104,11 +104,11 @@ BT::NodeStatus SendGoalAction::onFeedback(
 
 BT::NodeStatus SendGoalAction::onFailure(BT::ActionNodeErrorCode error)
 {
-  RCLCPP_ERROR(node_->get_logger(), "SendGoalAction failed with error code: %d", error);
+  RCLCPP_ERROR(logger(), "SendGoalAction failed with error code: %d", error);
   return BT::NodeStatus::FAILURE;
 }
 
-}  // namespace rm_behavior_tree
+}  // namespace rm_behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(rm_behavior_tree::SendGoalAction, "SendGoal");
+CreateRosNodePlugin(rm_behavior::SendGoalAction, "SendGoal");

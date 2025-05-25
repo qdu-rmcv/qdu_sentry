@@ -67,7 +67,7 @@
                                             tracker_port="{@tracker_target}"
                                             goal="{attack_pose}"
                                             topic_name="debug_attack_pose"/>
-                                <TopicNav2Goal goal="{attack_pose}" topic_name="/goal_pose"/>
+                                <Nav2Goal goal="{attack_pose}" topic_name="navigate_to_pose"/>
                             </Sequence>
                             <Sequence>
                                 <AllyBot costmap_port="{@nav_globalCostmap}"
