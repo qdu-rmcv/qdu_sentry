@@ -67,9 +67,9 @@ list(APPEND plugin_libs attack_pose)
 ament_auto_add_library(allybot SHARED src/plugins/action/allybot.cpp)
 list(APPEND plugin_libs allybot)
 
-####### nav2goal #######
-ament_auto_add_library(nav2goal SHARED src/plugins/action/nav2goal.cpp)
-list(APPEND plugin_libs nav2goal)
+####### send_goal #######
+ament_auto_add_library(send_goal SHARED src/plugins/action/send_goal.cpp)
+list(APPEND plugin_libs send_goal)
 
 ament_auto_add_library(topic_nav2goal SHARED src/plugins/action/topic_nav2goal.cpp)
 list(APPEND plugin_libs topic_nav2goal)

@@ -512,6 +512,12 @@ inline void RosActionNode<T>::halt()
   {
     cancelGoal();
     onHalt();
+    result_.code = rclcpp_action::ResultCode::SUCCEEDED;
+    onResultReceived(result_);
+    setStatus(NodeStatus::SUCCESS);
+    goal_handle_.reset();
+  }
+}
   }
 }
 

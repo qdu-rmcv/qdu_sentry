@@ -90,6 +90,7 @@
                 </Sequence>
             </WhileDoElse>
             <TopicNav2Goal goal="-1.52;1.18;0.00299" topic_name="/goal_pose"/>
+            <Sleep msec="2000"/>
         </WhileDoElse>
     </BehaviorTree>
 
@@ -204,5 +205,9 @@
                   default="debug_ally_pose"
                   type="std::string">Topic name for visualization</input_port>
     </Condition>
-    
+    <!-- forked from junlin -->
+    <Action ID="SendGoal"   editable="true">
+        <input_port name="goal_pose"    default="0;0;0; 0;0;0;1"/>
+        <input_port name="action_name"  default="navigate_to_pose"/>
+    </Action>
 </TreeNodesModel>
