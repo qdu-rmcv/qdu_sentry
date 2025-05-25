@@ -8,10 +8,14 @@
 
 
     <BehaviorTree ID="test">
-        <Sequence>
-            <TopicNav2Goal goal="1;1;0" topic_name="/goal_pose"/>
-            <TopicNav2Goal goal="0;0;0" topic_name="/goal_pose"/>
-        </Sequence>
+        <Repeat num_cycles="-1">
+            <Sequence>
+                <TopicNav2Goal goal="1;1;0" topic_name="/goal_pose"/>
+                <Sleep msec="3000"/>
+                <TopicNav2Goal goal="0;0;0" topic_name="/goal_pose"/>
+                <Sleep msec="3000"/>
+            </Sequence>
+        </Repeat>
     </BehaviorTree>
 </root>
 
