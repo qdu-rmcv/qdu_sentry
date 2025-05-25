@@ -37,17 +37,13 @@ bool SendGoalAction::setGoal(nav2_msgs::action::NavigateToPose::Goal & goal)
 
 void SendGoalAction::onHalt()
 {
-  // 调用基类的 onHalt() 以确保基本清理逻辑执行
-  RosActionNode<nav2_msgs::action::NavigateToPose>::onHalt(); // 假设基类在全局命名空间
-
-
   // 检查 goal_handle_ 是否有效
   if (goal_handle_)
   {
       // 获取目标状态
       const auto status = goal_handle_->get_status();
       RCLCPP_INFO(
-          node_->get_logger(), 
+          logger(), 
           "[SendGoalAction] Canceling goal (current status: %d)", 
           status
       );
