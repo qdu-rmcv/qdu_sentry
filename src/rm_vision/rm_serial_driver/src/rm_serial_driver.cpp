@@ -53,10 +53,10 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
 
     // 裁判系统
     // referee_pub=this->create_publisher<auto_aim_interfaces::msg::Referee>("/referee_info", 10);
-    buff_pub = this->create_publisher<referee_interfaces::msg::Buff>("/referee/buff", 10);
-    rfid_pub = this->create_publisher<referee_interfaces::msg::Rfid>("/referee/rfid", 10);
-    hp_pub = this->create_publisher<referee_interfaces::msg::BasicHp>("/referee/basichp", 10);
-    allybot_pub = this->create_publisher<referee_interfaces::msg::AllyBot>("/referee/allybot", 10);
+    buff_pub = this->create_publisher<referee_interfaces::msg::Buff>("/buff", 10);
+    rfid_pub = this->create_publisher<referee_interfaces::msg::Rfid>("/rfid", 10);
+    hp_pub = this->create_publisher<referee_interfaces::msg::BasicHp>("/basichp", 10);
+    allybot_pub = this->create_publisher<referee_interfaces::msg::AllyBot>("/allybot", 10);
     // Detect parameter client
     detector_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "armor_detector");
 
@@ -136,7 +136,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
           //   std::cout<<std::endl;
           ReceivePacket packet = fromVector(data);
           // std::cout<<std::endl;
-          //  std::cout<<"checksum"<<packet.checksum<<std::endl;
+            std::cout<<"checksum"<<packet.checksum<<std::endl;
           //  std::cout<<"send pitch:"<<packet.eulr.yaw<<std::endl;
           //  std::cout<<sizeof(packet)<<std::endl;
           //  std::cout<<"---------------------"<<std::endl;
