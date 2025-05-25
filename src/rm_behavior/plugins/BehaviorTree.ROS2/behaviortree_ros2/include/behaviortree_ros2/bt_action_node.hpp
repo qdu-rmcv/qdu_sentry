@@ -505,8 +505,7 @@ inline NodeStatus RosActionNode<T>::tick()
   return NodeStatus::RUNNING;
 }
 
-template <class T>
-inline void RosActionNode<T>::halt()
+template <class T> inline void RosActionNode<T>::halt()
 {
   if(status() == BT::NodeStatus::RUNNING)
   {
@@ -516,8 +515,6 @@ inline void RosActionNode<T>::halt()
     onResultReceived(result_);
     setStatus(NodeStatus::SUCCESS);
     goal_handle_.reset();
-  }
-}
   }
 }
 
