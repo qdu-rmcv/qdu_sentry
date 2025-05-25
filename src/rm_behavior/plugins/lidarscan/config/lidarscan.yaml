@@ -19,7 +19,7 @@
     
     # 云台运动参数
     spin_yaw_speed: 1.5    # 云台水平旋转速度
-    spin_pitch_speed: 3.0  # 云台俯仰速度
+    spin_pitch_speed: 2.0  # 云台俯仰速度
     scan_yaw_angle: 0.05   # 扫描时的yaw角度范围
     max_pitch: 0.30        # 最大俯仰角度
     min_pitch: -0.21       # 最小俯仰角度
@@ -37,9 +37,8 @@
     
     # 状态切换参数    
     transition_delay: 3.0       # 状态切换冷却时间（秒）
-    # TODO 存在莫名其妙的回 0 点问题
     max_switch_count: 5         # 允许的最大连续切换次数
-    hysteresis_threshold: 0.15  # 状态切换迟滞阈值
+    hysteresis_threshold: 0.20  # 状态切换迟滞阈值
     transition_speed: 0.05      # 状态平滑过渡速度
     
     # 自瞄和装甲板参数

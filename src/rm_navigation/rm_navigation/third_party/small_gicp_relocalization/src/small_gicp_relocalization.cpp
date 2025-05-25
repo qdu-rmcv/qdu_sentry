@@ -35,10 +35,10 @@ SmallGicpRelocalizationNode::SmallGicpRelocalizationNode(const rclcpp::NodeOptio
   this->declare_parameter("max_dist_sq", 1.0);
   this->declare_parameter("map_frame", "map");
   this->declare_parameter("odom_frame", "odom");
-  this->declare_parameter("base_frame", "");
+  this->declare_parameter("base_frame", "base_link");
   this->declare_parameter("robot_base_frame", "base_link");
-  this->declare_parameter("lidar_frame", "");
-  this->declare_parameter("prior_pcd_file", "");
+  this->declare_parameter("lidar_frame", "livox_frame");
+  this->declare_parameter("prior_pcd_file", "src/rm_navigation/rm_perception/fast_lio/PCD/map_1.pcd");
   this->declare_parameter("init_pose", std::vector<double>{0., 0., 0., 0., 0., 0.});
 
   this->get_parameter("num_threads", num_threads_);

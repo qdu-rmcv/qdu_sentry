@@ -6,6 +6,7 @@
   <!-- 底盘部分 -->
   <link name="base_link" />
 
+  <!-- 底盘连接 - 与serial_driver中的base_to_chassis TF对应 -->
   <link name="chassis"/>
   <joint name="base_to_chassis" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
@@ -13,29 +14,32 @@
     <child link="chassis" />
   </joint>
 
-  <!-- 云台部分 -->
+  <!-- 云台odom连接 - 与serial_driver中的chassis_to_gimbal TF对应 -->
   <link name="gimbal_odom" />
-  <joint name="gimbal_joint" type="fixed">
+  <joint name="chassis_to_gimbal" type="continuous">
     <origin xyz="0 0 0.35" rpy="0 0 0" />
     <parent link="chassis" />
     <child link="gimbal_odom" />
+    <axis xyz="0 0 1" />
   </joint>
 
+  <!-- 云台yaw轴 -->
   <link name="yaw_link" />
-  <joint name="yaw_joint" type="fixed">
-    <origin xyz="0 0 0.35" rpy="0 0 0" />
+  <joint name="yaw_joint" type="continuous">
     <parent link="gimbal_odom" />
     <child link="yaw_link" />
     <axis xyz="0 0 1" />
   </joint>
 
+  <!-- 激光雷达连接 -->
   <link name="livox_frame"/>
   <joint name="yaw_to_livox" type="fixed">
-    <origin xyz="-0.03 0.117 0" rpy="0 0 0" />
+    <origin xyz="0 0.07 0.2" rpy="0 0 0" />
     <parent link="yaw_link"/>
     <child link="livox_frame" />
   </joint>
 
+  <!-- 云台pitch轴 -->
   <link name="pitch_link" />
   <joint name="pitch_joint" type="continuous">
     <parent link="yaw_link" />
@@ -43,6 +47,7 @@
     <axis xyz="0 -1 0" />
   </joint>
 
+  <!-- 相机连接 -->
   <link name="camera_link" />
   <joint name="camera_joint" type="fixed">
     <origin xyz="0.17 0 0.08" rpy="0 0 0" />
