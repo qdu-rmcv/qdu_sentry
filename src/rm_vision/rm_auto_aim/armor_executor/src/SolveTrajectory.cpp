@@ -172,10 +172,11 @@ int SolveTrajectory::selectArmor(const auto_aim_interfaces::msg::Target::SharedP
 }
 
 void SolveTrajectory::fireLogicIsTop(float& pitch, float& yaw, float& aim_x, float& aim_y, float& aim_z, const auto_aim_interfaces::msg::Target::SharedPtr& msg) {
-    tar_yaw = msg->yaw;
+    
     // 线性预测
     float timeDelay = bias_time/1000.0 + fly_time;
-
+    tar_yaw = msg->yaw + msg->v_yaw * timeDelay;
+    
 
     //计算四块装甲板的位置
     //装甲板id顺序，以四块装甲板为例，逆时针编号
@@ -186,43 +187,26 @@ void SolveTrajectory::fireLogicIsTop(float& pitch, float& yaw, float& aim_x, flo
     bool is_fire = false;
     if (msg->armors_num  == ARMOR_NUM_BALANCE) {
         calculateArmorPosition(msg , true, false);
-        for (size_t i = 0; i < tmp_yaws.size(); i++) {
-            float tmp_yaw = tmp_yaws[i];
-            if (shouldFire(tmp_yaw, msg->v_yaw, timeDelay)) {
-                is_fire = true;
-                idx = i;
-                if (fireCallback) {
-                    fireCallback(is_fire);
-                }
-                break;
-            }
-        }   
-    } else if (msg->armors_num == ARMOR_NUM_OUTPOST) {
+        idx = selectArmor(msg,  false);
+        is_fire = true;
+        if(fireCallback)
+            fireCallback(is_fire);
+    }
+    else if (msg->armors_num == ARMOR_NUM_OUTPOST)
+    {
         calculateArmorPosition(msg, false, true);
-        for (size_t i = 0; i < tmp_yaws.size(); i++) {
-            float tmp_yaw = tmp_yaws[i];
-            if (shouldFire(tmp_yaw, msg->v_yaw, timeDelay)) {
-                is_fire = true;
-                idx = i;
-                if (fireCallback) {
-                    fireCallback(is_fire);
-                }
-                break;
-            }
-        }   
-    } else {
+        idx = selectArmor(msg, false);
+        is_fire = true;
+        if (fireCallback)
+            fireCallback(is_fire);
+    }
+    else
+    {
         calculateArmorPosition(msg, false, false);
-        for (size_t i = 0; i < tmp_yaws.size(); i++) {
-            float tmp_yaw = tmp_yaws[i];
-            if (shouldFire(tmp_yaw, msg->v_yaw, timeDelay)) {
-                is_fire = true;
-                idx = i;
-                if (fireCallback) {
-                    fireCallback(is_fire);
-                }
-                break;
-            }
-        }   
+        idx = selectArmor(msg, false);
+        is_fire = true;
+        if (fireCallback)
+            fireCallback(is_fire);
     }
     if(msg->yaw>min_yaw_in_cycle&&msg->yaw<max_yaw_in_cycle) is_fire=true;
     // if(is_fire)
