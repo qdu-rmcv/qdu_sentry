@@ -136,7 +136,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
           //   std::cout<<std::endl;
           ReceivePacket packet = fromVector(data);
           // std::cout<<std::endl;
-            std::cout<<"checksum"<<packet.checksum<<std::endl;
+          //  std::cout<<"checksum"<<packet.checksum<<std::endl;
           //  std::cout<<"send pitch:"<<packet.eulr.yaw<<std::endl;
           //  std::cout<<sizeof(packet)<<std::endl;
           //  std::cout<<"---------------------"<<std::endl;

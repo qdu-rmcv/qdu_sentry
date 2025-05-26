@@ -132,7 +132,7 @@ controller_server:
     min_x_velocity_threshold: 0.001  # 最小速度阈值，低于此值被视为静止
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
-    failure_tolerance: 3.0  # 容忍失败的最大时间(秒)
+    failure_tolerance: 1.0  # 容忍失败的最大时间(秒)
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]

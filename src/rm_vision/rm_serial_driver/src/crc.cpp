@@ -62,7 +62,7 @@ bool CRC16_Verify(const uint8_t *buf, std::size_t len) {
   if (len < 2) return false;
 
    uint16_t expected = CRC16_Calc(buf, len - sizeof(uint16_t), UINT16_MAX);
-   std::cout<<"expected:"<<expected<<std::endl;
+  //  std::cout<<"expected:"<<expected<<std::endl;
   uint8_t *bv=reinterpret_cast<uint8_t *>(&expected);
   // std::cout<<(uint8_t)*bv<<std::endl;))[len / sizeof(uint16_t) - 1]<<std::endl;
   //return expected==buf[len-2];
