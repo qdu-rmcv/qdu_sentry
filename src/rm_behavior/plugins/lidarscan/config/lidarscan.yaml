@@ -18,11 +18,11 @@
     min_scan_points: 20    # 最小扫描点数
     
     # 云台运动参数
-    spin_yaw_speed: 1.5    # 云台水平旋转速度
-    spin_pitch_speed: 2.0  # 云台俯仰速度
-    scan_yaw_angle: 1.00   # 扫描时的yaw角度范围
+    spin_yaw_speed: 0.0    # 云台水平旋转速度
+    spin_pitch_speed: 0.0  # 云台俯仰速度
+    scan_yaw_angle: 1.50   # 扫描时的yaw角度范围
     max_pitch: 0.10        # 最大俯仰角度
-    min_pitch: -0.37       # 最小俯仰角度s
+    min_pitch: -0.30       # 最小俯仰角度s
     max_yaw_speed: 2.0     # 最大yaw旋转速度
     pitch_more_speed: 0.5  # 仰时yaw速度
     pitch_more_speed: 0.5  # 俯时yaw速度
