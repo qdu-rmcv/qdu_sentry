@@ -22,7 +22,7 @@
   </joint>
 
   <link name="yaw_link" />
-  <joint name="yaw_joint" type="fixed">
+  <joint name="yaw_joint" type="continuous">
     <origin xyz="0 0 0.35" rpy="0 0 0" />
     <parent link="gimbal_odom" />
     <child link="yaw_link" />
