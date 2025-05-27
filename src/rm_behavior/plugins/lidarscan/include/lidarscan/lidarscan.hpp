@@ -162,8 +162,6 @@ namespace lidarscan
         double spin_pitch_speed_;
         double min_pitch_;
         double max_pitch_;
-        double scan_yaw_angle_;
-        double max_yaw_speed_;
         double scan_theta_;
 
         double state_switch_threshold_;

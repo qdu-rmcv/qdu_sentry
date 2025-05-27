@@ -17,7 +17,7 @@
                                 topic_name="debug_attack_pose"/>
                     <TopicNav2Goal goal="{attack_pose}" topic_name="/goal_pose"/>
                 </Sequence>
-            
+
                     <!-- 友方机器人追踪节点 -->
                 <Sequence>
                     <AllyBot costmap_port="{@nav_globalCostmap}" 

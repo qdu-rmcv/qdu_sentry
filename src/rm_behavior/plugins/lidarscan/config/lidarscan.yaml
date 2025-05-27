@@ -1,6 +1,4 @@
-/**:
-  ros__parameters:
-
+ros__parameters:
     # 坐标系参数
     base_frame: "base_link"
     gimbal_frame: "livox_frame"
@@ -18,16 +16,14 @@
     min_scan_points: 20    # 最小扫描点数
     
     # 云台运动参数
-    spin_yaw_speed: 0.0    # 云台水平旋转速度
-    spin_pitch_speed: 0.0  # 云台俯仰速度
-    scan_yaw_angle: 1.50   # 扫描时的yaw角度范围
+    spin_yaw_speed: 1.5    # 云台水平旋转速度
+    spin_pitch_speed: 2.0  # 云台俯仰速度
     max_pitch: 0.10        # 最大俯仰角度
-    min_pitch: -0.30       # 最小俯仰角度s
-    max_yaw_speed: 2.0     # 最大yaw旋转速度
-    pitch_more_speed: 0.5  # 仰时yaw速度
-    pitch_more_speed: 0.5  # 俯时yaw速度
+    min_pitch: -0.30       # 最小俯仰角度
+    pitch_more_speed: 0.8  # 仰时yaw速度
+    pitch_less_speed: 0.4  # 俯时yaw速度
     max_scan_period: 5     # 扫描周期数
-    scan_theta: 1.3       # 扫描角度范围
+    scan_theta: 2.0       # 扫描角度范围
     
     # 平滑参数
     yaw_smooth_factor: 0.8      # yaw角度平滑系数
@@ -35,7 +31,7 @@
     smooth_window_size: 5       # 平滑窗口大小
     state_switch_threshold: 0.5 # 状态切换阈值
 
-    # 状态切换参数    
+    # 状态切换参数
     transition_delay: 1.5       # 状态切换冷却时间（秒）
     max_switch_count: 5         # 允许的最大连续切换次数
     hysteresis_threshold: 0.20  # 状态切换迟滞阈值

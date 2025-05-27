@@ -39,9 +39,6 @@ namespace lidarscan
           logger_(get_logger())
     {
 
-        this->declare_parameter("base_frame", "base_link");
-        this->declare_parameter("gimbal_frame", "livox_frame");
-
         this->declare_parameter<std::string>("terrain_map_topic", "/terrain_map");
         this->declare_parameter<std::string>("gimbal_cmd_topic", "/gimbalcontrol");
         this->declare_parameter<std::string>("tracker_topic", "/tracker/send");
@@ -56,10 +53,8 @@ namespace lidarscan
         // 云台控制参数
         this->declare_parameter("spin_yaw_speed", 0.5);
         this->declare_parameter("spin_pitch_speed", 0.5);
-        this->declare_parameter("scan_yaw_angle", 0.2);
         this->declare_parameter("max_pitch", 0.46);
         this->declare_parameter("min_pitch", -0.39);
-        this->declare_parameter("max_yaw_speed", 2.0);
         this->declare_parameter("pitch_more_speed", 2.0);
         this->declare_parameter("pitch_less_speed", 0.4);
         this->declare_parameter("scan_theta", 1.57);
@@ -73,15 +68,12 @@ namespace lidarscan
         // 状态切换控制参数
         this->declare_parameter("max_switch_count", 5);        // 最大切换次数
         this->declare_parameter("hysteresis_threshold", 0.15); // 迟滞阈值
-        this->declare_parameter("transition_speed", 0.05);     // 过渡速度
+        this->declare_parameter("transition_speed", 0.05);     // scan速度
 
         // 自瞄和装甲板参数
         this->declare_parameter<std::vector<int64_t>>("armor_id", std::vector<int64_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
         this->declare_parameter<double>("max_distance", 8.0);
         this->declare_parameter<double>("transition_delay", 3.0);
-
-        this->get_parameter("base_frame", base_frame_);
-        this->get_parameter("gimbal_frame", gimbal_frame_);
 
         // 获取话题参数
         this->get_parameter("terrain_map_topic", terrain_map_topic_);
@@ -100,10 +92,10 @@ namespace lidarscan
         // 获取控制参数
         this->get_parameter("spin_yaw_speed", spin_yaw_speed_);
         this->get_parameter("spin_pitch_speed", spin_pitch_speed_);
-        this->get_parameter("scan_yaw_angle", scan_yaw_angle_);
+
         this->get_parameter("max_pitch", max_pitch_);
         this->get_parameter("min_pitch", min_pitch_);
-        this->get_parameter("max_yaw_speed", max_yaw_speed_);
+
         this->get_parameter("pitch_more_speed", pitch_more_speed_);
         this->get_parameter("pitch_less_speed", pitch_less_speed_);
 
@@ -731,7 +723,6 @@ namespace lidarscan
         static double yaw_direction = 1.0;
         static bool at_boundary = false;
 
-        // 处理上下俯仰
         current_pitch_ += pitch_direction * spin_pitch_speed_ * dt_;
         if (current_pitch_ >= max_pitch_)
         {
@@ -744,20 +735,18 @@ namespace lidarscan
             pitch_direction = 1.0;
         }
 
-        // 定义扫描的角度范围
         double yaw_limit_max = closest_obstacle_yaw_ + scan_theta_ / 2;
         double yaw_limit_min = closest_obstacle_yaw_ - scan_theta_ / 2;
 
         if (in_transition_to_scan_)
         {
-
             transition_progress_ += transition_speed_ * dt_;
 
             if (transition_progress_ >= 1.0)
             {
                 transition_progress_ = 1.0;
                 in_transition_to_scan_ = false;
-                RCLCPP_INFO(logger_, "SPIN到SCAN过渡完成");
+                RCLCPP_INFO(logger_, "SPIN->SCAN");
             }
 
 
@@ -797,7 +786,7 @@ namespace lidarscan
             {
                 if (!at_boundary)
                 {
-                    RCLCPP_INFO(logger_, "扫描障碍物 角度: %.2f, 到达右边界, 进度: %d/%d",
+                    RCLCPP_INFO(logger_, "扫描障碍物 角度: %.2f, 右边界, 周期: %d/%d",
                                 closest_obstacle_yaw_, current_period, max_scan_period_);
                     current_period++;
                     at_boundary = true;
@@ -809,7 +798,7 @@ namespace lidarscan
             {
                 if (!at_boundary)
                 {
-                    RCLCPP_INFO(logger_, "扫描障碍物 角度: %.2f, 到达左边界, 进度: %d/%d",
+                    RCLCPP_INFO(logger_, "扫描障碍物 角度: %.2f, 左边界, 周期: %d/%d",
                                 closest_obstacle_yaw_, current_period, max_scan_period_);
                     current_period++;
                     at_boundary = true;
@@ -824,7 +813,6 @@ namespace lidarscan
             current_yaw_ = new_yaw;
         }
 
-        // 检查是否完成指定数量的扫描周期
         if (current_period >= max_scan_period_)
         {
             current_period = 0;
