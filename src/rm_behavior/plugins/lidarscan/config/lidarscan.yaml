@@ -1,8 +1,5 @@
 ros__parameters:
-    # 坐标系参数
-    base_frame: "base_link"
-    gimbal_frame: "livox_frame"
-    
+
     # 话题配置
     terrain_map_topic: "/terrain_map" # 地形图话题
     gimbal_cmd_topic: "/gimbalcontrol"   # 云台控制话题

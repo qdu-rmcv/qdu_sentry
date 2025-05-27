@@ -151,11 +151,6 @@ namespace lidarscan
         int current_period;
         int max_scan_period_;
 
-        std::string base_frame_;
-        std::string gimbal_frame_;
-        std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-        std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
         std::vector<double> obstacle_yaws_;
 
         double spin_yaw_speed_;
