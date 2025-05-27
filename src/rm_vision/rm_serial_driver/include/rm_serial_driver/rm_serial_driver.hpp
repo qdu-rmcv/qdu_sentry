@@ -32,6 +32,7 @@
 #include "referee_interfaces/msg/basic_hp.hpp"
 #include "referee_interfaces/msg/ally_bot.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "referee_interfaces/msg/game_status.hpp"
 
 namespace rm_serial_driver
 {
@@ -98,6 +99,7 @@ private:
   referee_interfaces::msg::BasicHp hp_info;
   referee_interfaces::msg::AllyBot allybot_info;
   auto_aim_interfaces::msg::Chassis Chassis_info;
+  referee_interfaces::msg::GameStatus game_status_info;
 
   //geometry_msgs::msg::Twist classic_;
 
@@ -110,6 +112,7 @@ private:
   rclcpp::Publisher<referee_interfaces::msg::BasicHp>::SharedPtr hp_pub;
   rclcpp::Publisher<referee_interfaces::msg::AllyBot>::SharedPtr allybot_pub;
   rclcpp::Publisher<auto_aim_interfaces::msg::Chassis>::SharedPtr Chassis_pub;
+  rclcpp::Publisher<referee_interfaces::msg::GameStatus>::SharedPtr game_status_pub;
 
   rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr target_sub_;
   rclcpp::Subscription<auto_aim_interfaces::msg::Send>::SharedPtr send_sub_;

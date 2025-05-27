@@ -53,10 +53,12 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
 
     // 裁判系统
     // referee_pub=this->create_publisher<auto_aim_interfaces::msg::Referee>("/referee_info", 10);
-    buff_pub = this->create_publisher<referee_interfaces::msg::Buff>("/buff", 10);
-    rfid_pub = this->create_publisher<referee_interfaces::msg::Rfid>("/rfid", 10);
-    hp_pub = this->create_publisher<referee_interfaces::msg::BasicHp>("/basichp", 10);
-    allybot_pub = this->create_publisher<referee_interfaces::msg::AllyBot>("/allybot", 10);
+    buff_pub = this->create_publisher<referee_interfaces::msg::Buff>("/referee/buff", 10);
+    rfid_pub = this->create_publisher<referee_interfaces::msg::Rfid>("/referee/rfid", 10);
+    hp_pub = this->create_publisher<referee_interfaces::msg::BasicHp>("/referee/basichp", 10);
+    allybot_pub = this->create_publisher<referee_interfaces::msg::AllyBot>("/referee/allybot", 10);
+    game_status_pub = this->create_publisher < referee_interfaces::msg::GameStatus("/referee/game_status", 10);
+
     // Detect parameter client
     detector_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "armor_detector");
 
@@ -156,7 +158,8 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
 
             packet.pitch = RMSerialDriver::pitch_re_trans(packet.eulr.pit);
             packet.yaw = RMSerialDriver::pitch_re_trans(packet.eulr.yaw);
-
+            game_status_info.game_progress = packet.time;
+            game_status_info.stage_remain_time = packet.remain_time;
             int temp = packet.rfid;
             int count = 0;
             rfid_info.base_gain_point = (temp >> (count++)) & 1;
@@ -223,6 +226,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
             Chassis_info.damaged_armor_id = packet.damaged_armor_id;
             // 发布 Chassis 信息
             Chassis_pub->publish(Chassis_info);
+            game_status_pub->publish(game_status_info);
 
             /*-------------UL---------------------------------*/
             // refer_info.event_data=packet.event_data;
