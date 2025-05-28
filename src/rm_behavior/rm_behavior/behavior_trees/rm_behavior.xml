@@ -7,17 +7,16 @@
     </SetBlackboard>
     <BehaviorTree ID="rm_behavior">
         <Sequence>
-            <WhileDoElse/>
+            <WhileDoElse>
                 <GameStatusCheck time_limit="4"/>
-                <Repeat num_cycles="-1">
-                    <Sequence>
-                        <TopicNav2Goal goal="-1.33;0.78;0.0302" topic_name="/goal_pose"/>
-                        <Sleep msec="2000"/>
-                        <TopicNav2Goal goal="0.0704;-1.61;0.0181" topic_name="/goal_pose"/>
-                        <Sleep msec="2000"/>
-                    </Sequence>
-                <TopicNav2Goal goal="0.0783;0.384;0.00563" topic_name="/goal_pose"/>
-            </Repeat>
+                <Sequence>
+                    <TopicNav2Goal goal="0.117;-0.78;0.0302" topic_name="/goal_pose"/>
+                    <Sleep msec="8000"/>
+                    <TopicNav2Goal goal="0.276;0.614;0.0181" topic_name="/goal_pose"/>
+                    <Sleep msec="8000"/>
+                </Sequence>
+                <TopicNav2Goal goal="-0.193;0.0;0.00563" topic_name="/goal_pose"/>
+            </WhileDoElse>
         </Sequence>
     </BehaviorTree>
 

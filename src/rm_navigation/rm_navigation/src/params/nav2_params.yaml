@@ -1,11 +1,11 @@
 small_gicp_relocalization:
   ros__parameters:
     use_sim_time: false
-    num_threads: 4
-    num_neighbors: 10
-    global_leaf_size: 0.25
-    registered_leaf_size: 0.25
-    max_dist_sq: 3.0
+    num_threads: 5
+    num_neighbors: 100
+    global_leaf_size: 0.2
+    registered_leaf_size: 0.5
+    max_dist_sq: 1.0
     map_frame: "map"
     odom_frame: "odom"
     base_frame: "base_link"
@@ -121,17 +121,19 @@ controller_server:
     FollowPath:
       plugin: teb_local_planner::TebLocalPlannerROS
       teb_autosize: 1.0
-      dt_ref: 0.3
-      dt_hysteresis: 0.03
+      dt_ref: 0.6
+      dt_hysteresis: 0.06
       max_samples: 500
       global_plan_overwrite_orientation: False
       allow_init_with_backwards_motion: True
-      max_global_plan_lookahead_dist: 4.0
-      global_plan_viapoint_sep: 0.7
+      max_global_plan_lookahead_dist: 2.0
+      global_plan_viapoint_sep: 0.5
+      via_points_ordered: False             #是否遵循存储容器中中间点的顺序
       global_plan_prune_distance: 1.0
       exact_arc_length: False
       feasibility_check_no_poses: 0
       publish_feedback: False
+
       # Robot
       max_vel_x: 0.2
       max_vel_x_backwards: 0.2
@@ -154,7 +156,7 @@ controller_server:
 
       min_obstacle_dist: 0.3                      #机器人与障碍物之间最小的期望间隔距离
       inflation_dist: 0.6                         #障碍物周围的缓冲区，用于增加安全裕度。此缓冲区内具有非零的惩罚代价
-      dynamic_obstacle_inflation_dist: 0.5        #具有非零惩罚成本的动态障碍物预测位置周围的缓冲区（应大于min_obstacle_dist才能生效)
+      dynamic_obstacle_inflation_dist: 0.7        #具有非零惩罚成本的动态障碍物预测位置周围的缓冲区（应大于min_obstacle_dist才能生效)
       include_dynamic_obstacles: True             #预测动态障碍物周围的缓冲区，用于增加安全裕度。此缓冲区内具有非零的惩罚代价
       include_costmap_obstacles: True             #是否直接考虑代价地图中的障碍物 (如果没有单独的聚类和检测功能，则需要此选项)
       legacy_obstacle_association: False          #是否严格遵循局部规划出来的路径。如果为真，则使用旧的关联策略 (为每个障碍物找到最近的 TEB 姿势)，否则使用新的关联策略 (为每个 TEB 姿势仅找到“相关”障碍物)
@@ -345,7 +347,7 @@ planner_server:
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_smac_planner/SmacPlannerHybrid"
-      tolerance: 0.15                      # 如果无法到达精确位置的规划容差，单位：米
+      tolerance: 0.5                      # 如果无法到达精确位置的规划容差，单位：米
       use_astar: true                     # 是否使用A*算法
       allow_unknown: true                 # 允许在未知空间中行驶
       downsample_costmap: false           # 是否对地图进行下采样
