@@ -15,11 +15,11 @@ rm_behavior_server:
 
     # 导航相关参数
     NavigateToPosition:
-      max_distance: 3.0                         # 最大导航距离（米）
-      timeout_seconds: 30.0                     # 导航超时时间（秒）
+      max_distance: 10.0                         # 最大导航距离（米）
+      timeout_seconds: 60.0                     # 导航超时时间（秒）
 
 
 rm_behavior_client:
   ros__parameters:
     use_sim_time: true
-    target_tree: hero_follow      # 默认启动的行为树/hero_follow/basic
+    target_tree: rm_behavior      # 默认启动的行为树/hero_follow/basic

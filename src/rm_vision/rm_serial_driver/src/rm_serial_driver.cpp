@@ -57,7 +57,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
     rfid_pub = this->create_publisher<referee_interfaces::msg::Rfid>("/referee/rfid", 10);
     hp_pub = this->create_publisher<referee_interfaces::msg::BasicHp>("/referee/basichp", 10);
     allybot_pub = this->create_publisher<referee_interfaces::msg::AllyBot>("/referee/allybot", 10);
-    game_status_pub = this->create_publisher < referee_interfaces::msg::GameStatus("/referee/game_status", 10);
+    game_status_pub = this->create_publisher < referee_interfaces::msg::GameStatus>("/referee/game_status", 10);
 
     // Detect parameter client
     detector_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "armor_detector");

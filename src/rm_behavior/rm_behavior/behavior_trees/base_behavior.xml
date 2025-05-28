@@ -1,5 +1,5 @@
 
-<BehaviorTree ID="rm_behavior">
+<BehaviorTree ID="rm_">
     <Sequence>
     <TimeCheck time_limit="4"/>
         <WhileDoElse>

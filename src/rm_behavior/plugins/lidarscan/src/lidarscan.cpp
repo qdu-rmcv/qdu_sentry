@@ -18,7 +18,6 @@ namespace lidarscan
 {
     LidarscanNode::LidarscanNode(const rclcpp::NodeOptions &options)
         : Node("lidarscan_node", options),
-          tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock())),
           current_state_(SPIN),
           current_yaw_(0.0),
           current_pitch_(0.0),
@@ -141,8 +140,6 @@ namespace lidarscan
         chassis_sub_ = this->create_subscription<auto_aim_interfaces::msg::Chassis>(
             chassis_topic_, rclcpp::SensorDataQoS(),
             std::bind(&LidarscanNode::chassisCallback, this, std::placeholders::_1));
-
-        tf_buffer_->setUsingDedicatedThread(true);
 
         for (int i = 0; i < smooth_window_size_; ++i)
         {
