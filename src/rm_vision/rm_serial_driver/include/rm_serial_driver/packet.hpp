@@ -28,7 +28,7 @@ struct ReceivePacket
 
   //uint32_t  event_data; // 重要事件数据        
   uint8_t time;//
-  int remain_time;
+  
 
   uint32_t rfid;        //增益 
   uint16_t base_hp;      //基地血量

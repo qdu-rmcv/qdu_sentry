@@ -1,4 +1,5 @@
-ros__parameters:
+/**:
+  ros__parameters:
 
     # 话题配置
     terrain_map_topic: "/terrain_map" # 地形图话题

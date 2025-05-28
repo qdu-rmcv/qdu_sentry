@@ -159,7 +159,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
             packet.pitch = RMSerialDriver::pitch_re_trans(packet.eulr.pit);
             packet.yaw = RMSerialDriver::pitch_re_trans(packet.eulr.yaw);
             game_status_info.game_progress = packet.time;
-            game_status_info.stage_remain_time = packet.remain_time;
+          
             int temp = packet.rfid;
             int count = 0;
             rfid_info.base_gain_point = (temp >> (count++)) & 1;

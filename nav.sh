@@ -13,10 +13,10 @@ cmds=(
 
 	"ros2 launch terrain_analysis terrain_analysis_launch.py" #cpp
 	# "ros2 launch icp_registration icp.launch.py" #yamls
-	"ros2 launch small_gicp_relocalization small_gicp_relocalization_launch.py"
+	# "ros2 launch small_gicp_relocalization small_gicp_relocalization_launch.py"
 
 	"ros2 launch pointcloud_to_laserscan pointcloud_to_laserscan_launch.py"
-
+	# "ros2 run tf2_ros static_transform_publisher --frame-id map --child-frame-id odom --x 0 --y 0 --z 0 --roll 0 --pitch 0 --yaw 0 --ros-args -r /tf:=tf -r /tf_static:=tf_static -r  __ns:=/red_standard_robot1"
 	# "ros2 run rm_decision rm_decision_node"
 	"sleep 3 && ros2 launch rm_navigation bringup_launch.py"
 
