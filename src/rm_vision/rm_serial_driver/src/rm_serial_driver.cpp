@@ -382,12 +382,13 @@ void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_y
 
       if (msg->tracking == true)
       {
-        packet.notice = (1 << 1);
+        packet.notice = (1);
       }
+      std::cout<<"notice: "<<packet.notice<<std::endl;
       // bool t=msg->tracking;
       packet.pitch = RMSerialDriver::pitch_trans(msg->pitch);
       packet.yaw = RMSerialDriver::pitch_trans(msg->yaw);
-      // std::cout<<"-----------------------------"<<std::endl;
+     //  std::cout<<"-----------------------------"<<std::endl;
       //       std::cout<<"pitch:"<<packet.pitch<<std::endl;
       //       std::cout<<"yaw:"<<packet.yaw<<std::endl;
       // std::cout<<"------------------------------"<<std::endl;

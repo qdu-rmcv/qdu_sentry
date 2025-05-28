@@ -69,7 +69,7 @@ struct SendPacket
   float yaw; 
   float pitch;
   float roll=0;   
-  uint8_t notice=(1<<0);  
+  uint8_t notice=(1<<1);  
   float vx; 
   float vy; 
   
