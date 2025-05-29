@@ -136,6 +136,7 @@ controller_server:
       global_plan_viapoint_sep: 0.5         #从全局计划中提取的连续中间点之间的最小分离距离
       via_points_ordered: False             #是否遵循存储容器中中间点的顺序
       # Robot
+
       max_vel_x: 0.6
       max_vel_x_backwards: 0.6
       max_vel_y: 0.6
@@ -143,6 +144,7 @@ controller_server:
       acc_lim_x: 0.2
       acc_lim_y: 0.2
       acc_lim_theta: 0.2
+
       min_turning_radius: 0.0 # omni-drive robot (can turn on place!)
       footprint_model:
         type: "point"
@@ -155,7 +157,7 @@ controller_server:
 
       # Obstacles
 
-      min_obstacle_dist: 0.04 # This value must also include our robot radius, since footprint_model is set to "point".
+      min_obstacle_dist: 0.4 # This value must also include our robot radius, since footprint_model is set to "point".
       inflation_dist: 0.26
       include_costmap_obstacles: True
       costmap_obstacles_behind_robot_dist: 1.0
