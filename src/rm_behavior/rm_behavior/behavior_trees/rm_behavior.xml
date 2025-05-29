@@ -6,16 +6,40 @@
         <entry key="trans_w" value="4.0" />
     </SetBlackboard>
     <BehaviorTree ID="rm_behavior">
-        <Sequence>
+        <WhileDoElse name="main">
+            <GameStatusCheck game_status="{@referee_gameStatus}" time_limit="4"/>
             <WhileDoElse>
-                <GameStatusCheck time_limit="4"/>
-                <WhileDoElse>
-                    <StatusCheck sentry_hp_limit="150" projectile_allowance_limit="20"/>
-                    <TopicNav2Goal goal="5.0;1.56;0.0" topic_name="/goal_pose"/>
-                    <TopicNav2Goal goal="0.298;-5.62;0.0" topic_name="/goal_pose"/>
-                </WhileDoElse>
+                <StatusCheck sentry_hp_limit="300" projectile_allowance_limit="20"/>
+                <Sequence>
+                    <WhileDoElse>
+                        <!-- 追击模式 -->
+                        <EnemyDetected armor_id="1;2;3;4;5;7"
+                                       max_distance="8.0"
+                                       key_port="{@detector_armors}"/>
+                        <Sequence>
+                            <AttackPose costmap_port="{@nav_globalCostmap}"
+                                        tracker_port="{@tracker_target}"
+                                        goal="{attack_pose}"
+                                        topic_name="debug_attack_pose"/>
+                            <TopicNav2Goal goal="{attack_pose}" topic_name="/goal_pose"/>
+                        </Sequence>
+                        <Repeat num_cycles="-1">
+                            <Sequence>
+                                <TopicNav2Goal goal="-0.257;-0.272;0" topic_name="/goal_pose"/>
+                                <Sleep msec="3000"/>
+                                <TopicNav2Goal goal="-3.50;-2.36;0" topic_name="/goal_pose"/>
+                                <Sleep msec="3000"/>
+                            </Sequence>
+                        </Repeat>
+                    </WhileDoElse>
+                </Sequence>
+                <Sequence>
+                    <TopicNav2Goal goal="2.21;-0.723;0.0" topic_name="/goal_pose"/>
+                    <Sleep msec="3000"/>
+                </Sequence>
             </WhileDoElse>
-        </Sequence>
+            <TopicNav2Goal goal="2.21;-0.723;0" topic_name="/goal_pose"/>
+        </WhileDoElse>
     </BehaviorTree>
 
 

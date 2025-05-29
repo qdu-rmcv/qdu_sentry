@@ -130,7 +130,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
         {
           data.resize(sizeof(ReceivePacket) - 1);
           serial_driver_->port()->receive(data);
-          int detect_color = 0;
+          int detect_color = 0;//0hong 1lan
           data.insert(data.begin(), header[0]);
           //  std::cout<<(int)data.size()<<std::endl<<std::endl;
           //   for(int i=0;i<(int)data.size();i++)
@@ -321,27 +321,46 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
     }
   }
 
-// 底盘 tf 变换
 void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_yaw)
-{
-  rclcpp::Time now = this->now();
-  // chassis_gimbal
-  geometry_msgs::msg::TransformStamped chassis_to_gimbal;
-  chassis_to_gimbal.header.stamp = now;
-  chassis_to_gimbal.header.frame_id = "chassis";
-  chassis_to_gimbal.child_frame_id = "gimbal_odom";
-
-  chassis_to_gimbal.transform.translation.x = 0.0;
-  chassis_to_gimbal.transform.translation.y = 0.0;
-  chassis_to_gimbal.transform.translation.z = 0.0;
-
-  tf2::Quaternion q_chassis_gimbal;
-  q_chassis_gimbal.setRPY(0, 0, -livox_yaw+chassis_yaw_offset);
-  chassis_to_gimbal.transform.rotation.x = q_chassis_gimbal.x();
-  chassis_to_gimbal.transform.rotation.y = q_chassis_gimbal.y();
-  chassis_to_gimbal.transform.rotation.z = q_chassis_gimbal.z();
-  chassis_to_gimbal.transform.rotation.w = q_chassis_gimbal.w();
-
+  {
+    rclcpp::Time now = this->now();
+  
+    geometry_msgs::msg::TransformStamped base_to_chassis;
+    // 添加时间戳
+    base_to_chassis.header.stamp = now;
+    base_to_chassis.header.frame_id = "base_link";
+    base_to_chassis.child_frame_id = "chassis";
+  
+    base_to_chassis.transform.translation.x = 0.0;
+    base_to_chassis.transform.translation.y = 0.0;
+    base_to_chassis.transform.translation.z = 0.0;
+  
+    tf2::Quaternion q_base_chassis;
+    q_base_chassis.setRPY(0, 0, 0);
+    base_to_chassis.transform.rotation.x = q_base_chassis.x();
+    base_to_chassis.transform.rotation.y = q_base_chassis.y();
+    base_to_chassis.transform.rotation.z = q_base_chassis.z();
+    base_to_chassis.transform.rotation.w = q_base_chassis.w();
+    
+    // chassis_gimbal
+    geometry_msgs::msg::TransformStamped chassis_to_gimbal;
+    chassis_to_gimbal.header.stamp = now;
+    chassis_to_gimbal.header.frame_id = "chassis";
+    chassis_to_gimbal.child_frame_id = "gimbal_odom";
+  
+    chassis_to_gimbal.transform.translation.x = 0.0;
+    chassis_to_gimbal.transform.translation.y = 0.0;
+    chassis_to_gimbal.transform.translation.z = 0.0;
+  
+    tf2::Quaternion q_chassis_gimbal;
+    q_chassis_gimbal.setRPY(0, 0, -livox_yaw+chassis_yaw_offset);
+    chassis_to_gimbal.transform.rotation.x = q_chassis_gimbal.x();
+    chassis_to_gimbal.transform.rotation.y = q_chassis_gimbal.y();
+    chassis_to_gimbal.transform.rotation.z = q_chassis_gimbal.z();
+    chassis_to_gimbal.transform.rotation.w = q_chassis_gimbal.w();
+  
+  
+    tf_broadcaster_->sendTransform(base_to_chassis);
     tf_broadcaster_->sendTransform(chassis_to_gimbal);
   }
 

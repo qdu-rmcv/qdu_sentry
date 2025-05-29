@@ -613,7 +613,6 @@ namespace lidarscan
         auto_aim_interfaces::msg::Send cmd_msg;
         cmd_msg.yaw = final_yaw;
         cmd_msg.pitch = final_pitch;
-        cmd_msg.tracking = (current_state_ == SCAN);
         gimbal_cmd_pub_->publish(cmd_msg);
     }
 

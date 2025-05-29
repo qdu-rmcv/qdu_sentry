@@ -21,20 +21,19 @@
     <child link="gimbal_odom" />
   </joint>
 
-
-  <link name="livox_frame"/>
-  <joint name="yaw_to_livox" type="fixed">
-    <origin xyz="-0.03 0.117 0.15" rpy="0 0 0" />
-    <parent link="gimbal_odom"/>
-    <child link="livox_frame" />
-  </joint>
-
   <link name="yaw_link" />
   <joint name="yaw_joint" type="continuous">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="gimbal_odom" />
     <child link="yaw_link" />
     <axis xyz="0 0 1" />
+  </joint>
+
+  <link name="livox_frame"/>
+  <joint name="yaw_to_livox" type="fixed">
+    <origin xyz="-0.03 0.117 0" rpy="0 0 0" />
+    <parent link="yaw_link"/>
+    <child link="livox_frame" />
   </joint>
 
 

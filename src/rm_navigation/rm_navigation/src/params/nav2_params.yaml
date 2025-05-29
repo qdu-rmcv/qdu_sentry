@@ -26,7 +26,7 @@ bt_navigator:
     global_frame: map
     robot_base_frame: base_link
     odom_topic: /odometry
-    bt_loop_duration: 10
+    bt_loop_duration: 10 
     default_server_timeout: 20
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
     # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
@@ -105,7 +105,7 @@ controller_server:
     # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.3
+      required_movement_radius: 0.15
       movement_time_allowance: 10.0
     # Goal checker parameters
     # precise_goal_checker:
@@ -116,30 +116,33 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.15
+      xy_goal_tolerance: 0.5
       yaw_goal_tolerance: 6.28
     FollowPath:
       plugin: teb_local_planner::TebLocalPlannerROS
       teb_autosize: 1.0
-      dt_ref: 0.4
-      dt_hysteresis: 0.04
+      dt_ref: 0.6
+      dt_hysteresis: 0.06
       max_samples: 500
       global_plan_overwrite_orientation: True
       allow_init_with_backwards_motion: True
-      max_global_plan_lookahead_dist: 7.0
-      global_plan_viapoint_sep: 0.7
-      global_plan_prune_distance: 1.0
-      exact_arc_length: False
-      feasibility_check_no_poses: 0
+      max_global_plan_lookahead_dist: 3.0
+      global_plan_viapoint_sep: 1.0
+      global_plan_prune_distance: 0.1
+      feasibility_check_no_poses: 0                 #在预测路径上，每个采样间隔需要检查可行性的姿态数目
+      feasibility_check_lookahead_distance: 1.5     #每个采样间隔需要检查可行性的距离（以及feasibility_check_no_poses之下的索引）与机器人之间的距离。-1检查所有姿势，直到feasibility_check_no_poses。https://robotics.stackexchange.com/questions/80845/what-are-reasons-for-teb-planners-feasibility-check-to-fail
+      exact_arc_length: True
       publish_feedback: False
+      global_plan_viapoint_sep: 0.5         #从全局计划中提取的连续中间点之间的最小分离距离
+      via_points_ordered: False             #是否遵循存储容器中中间点的顺序
       # Robot
       max_vel_x: 0.6
       max_vel_x_backwards: 0.6
       max_vel_y: 0.6
       max_vel_theta: 0.6
-      acc_lim_x: 0.3
-      acc_lim_y: 0.3
-      acc_lim_theta: 0.3
+      acc_lim_x: 0.2
+      acc_lim_y: 0.2
+      acc_lim_theta: 0.2
       min_turning_radius: 0.0 # omni-drive robot (can turn on place!)
       footprint_model:
         type: "point"
@@ -161,7 +164,7 @@ controller_server:
       costmap_converter_spin_thread: True
       costmap_converter_rate: 5
       # Optimization
-
+      legacy_obstacle_association: False          #是否严格遵循局部规划出来的路径。如果为真，则使用旧的关联策略 (为每个障碍物找到最近的 TEB 姿势)，否则使用新的关联策略 (为每个 TEB 姿势仅找到“相关”障碍物)
       no_inner_iterations: 5
       no_outer_iterations: 4
       optimization_activate: True
@@ -175,7 +178,7 @@ controller_server:
       weight_acc_lim_y: 1.5
       weight_acc_lim_theta: 1.5
       weight_kinematics_nh: 1.0 # WE HAVE A HOLONOMIC ROBOT, JUST ADD A SMALL PENALTY
-      weight_kinematics_forward_drive: 1.0
+      weight_kinematics_forward_drive: 0.0
       weight_kinematics_turning_radius: 1.0
       weight_optimaltime: 1.0 # must be > 0
       weight_shortest_path: 5.0
@@ -183,7 +186,7 @@ controller_server:
       weight_inflation: 0.2
       weight_dynamic_obstacle: 10.0
       weight_dynamic_obstacle_inflation: 0.2
-      weight_viapoint: 1.0
+      weight_viapoint: 5.0
       weight_adapt_factor: 2.0
       # Homotopy Class Planner
       enable_homotopy_class_planning: True
@@ -341,7 +344,7 @@ planner_server:
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_smac_planner/SmacPlannerHybrid"
-      tolerance: 0.15                      # 如果无法到达精确位置的规划容差，单位：米
+      tolerance: 0.5                      # 如果无法到达精确位置的规划容差，单位：米
       use_astar: true                     # 是否使用A*算法
       allow_unknown: true                 # 允许在未知空间中行驶
       downsample_costmap: false           # 是否对地图进行下采样
