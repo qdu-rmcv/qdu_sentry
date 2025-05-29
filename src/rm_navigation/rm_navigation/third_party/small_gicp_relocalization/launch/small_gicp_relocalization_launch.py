@@ -42,7 +42,7 @@ def generate_launch_description():
                 "odom_frame": "odom",
                 "base_frame": "base_link",
                 "lidar_frame": "livox_frame",
-                "prior_pcd_file": "src/rm_navigation/rm_perception/fast_lio/PCD/map_1.pcd",
+                "prior_pcd_file": "src/rm_navigation/rm_perception/fast_lio/PCD/blueall.pcd",
                 # init_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             }
         ],

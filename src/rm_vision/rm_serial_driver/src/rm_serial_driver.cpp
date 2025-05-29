@@ -55,8 +55,8 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
     // referee_pub=this->create_publisher<auto_aim_interfaces::msg::Referee>("/referee_info", 10);
     buff_pub = this->create_publisher<referee_interfaces::msg::Buff>("/referee/buff", 10);
     rfid_pub = this->create_publisher<referee_interfaces::msg::Rfid>("/referee/rfid", 10);
-    hp_pub = this->create_publisher<referee_interfaces::msg::BasicHp>("/referee/basichp", 10);
-    allybot_pub = this->create_publisher<referee_interfaces::msg::AllyBot>("/referee/allybot", 10);
+    hp_pub = this->create_publisher<referee_interfaces::msg::BasicHp>("/referee/basic_hp", 10);
+    allybot_pub = this->create_publisher<referee_interfaces::msg::AllyBot>("/referee/ally_bot", 10);
     game_status_pub = this->create_publisher < referee_interfaces::msg::GameStatus>("/referee/game_status", 10);
 
     // Detect parameter client
@@ -223,7 +223,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
             allybot_pub->publish(allybot_info);
 
             Chassis_info.chassis_yaw_offset = packet.chassis_yaw_offset_;
-            Chassis_info.damaged_armor_id = packet.damaged_armor_id;
+            Chassis_info.damaged_armor_id = /*packet.damaged_armor_id*/ 0 ;
             // 发布 Chassis 信息
             Chassis_pub->publish(Chassis_info);
             game_status_pub->publish(game_status_info);
@@ -325,24 +325,6 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
 void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_yaw)
 {
   rclcpp::Time now = this->now();
-
-  geometry_msgs::msg::TransformStamped base_to_chassis;
-  // 添加时间戳
-  base_to_chassis.header.stamp = now;
-  base_to_chassis.header.frame_id = "base_link";
-  base_to_chassis.child_frame_id = "chassis";
-
-  base_to_chassis.transform.translation.x = 0.0;
-  base_to_chassis.transform.translation.y = 0.0;
-  base_to_chassis.transform.translation.z = 0.0;
-
-  tf2::Quaternion q_base_chassis;
-  q_base_chassis.setRPY(0, 0, 0);
-  base_to_chassis.transform.rotation.x = q_base_chassis.x();
-  base_to_chassis.transform.rotation.y = q_base_chassis.y();
-  base_to_chassis.transform.rotation.z = q_base_chassis.z();
-  base_to_chassis.transform.rotation.w = q_base_chassis.w();
-
   // chassis_gimbal
   geometry_msgs::msg::TransformStamped chassis_to_gimbal;
   chassis_to_gimbal.header.stamp = now;
@@ -351,7 +333,7 @@ void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_y
 
   chassis_to_gimbal.transform.translation.x = 0.0;
   chassis_to_gimbal.transform.translation.y = 0.0;
-  chassis_to_gimbal.transform.translation.z = 0.35;
+  chassis_to_gimbal.transform.translation.z = 0.0;
 
   tf2::Quaternion q_chassis_gimbal;
   q_chassis_gimbal.setRPY(0, 0, -livox_yaw+chassis_yaw_offset);
@@ -360,8 +342,6 @@ void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_y
   chassis_to_gimbal.transform.rotation.z = q_chassis_gimbal.z();
   chassis_to_gimbal.transform.rotation.w = q_chassis_gimbal.w();
 
-
-    tf_broadcaster_->sendTransform(base_to_chassis);
     tf_broadcaster_->sendTransform(chassis_to_gimbal);
   }
 
@@ -383,11 +363,16 @@ void RMSerialDriver::publishTransforms(double chassis_yaw_offset, double livox_y
       if (msg->tracking == true)
       {
         packet.notice = (1);
+        packet.yaw = RMSerialDriver::pitch_trans(msg->yaw);
+
       }
-      std::cout<<"notice: "<<packet.notice<<std::endl;
+      else
+        packet.yaw = RMSerialDriver::pitch_trans(msg->yaw);
+
+      //std::cout<<"notice: "<<(int)packet.notice<<std::endl;
       // bool t=msg->tracking;
       packet.pitch = RMSerialDriver::pitch_trans(msg->pitch);
-      packet.yaw = RMSerialDriver::pitch_trans(msg->yaw);
+     // packet.yaw = RMSerialDriver::pitch_trans(msg->yaw);
      //  std::cout<<"-----------------------------"<<std::endl;
       //       std::cout<<"pitch:"<<packet.pitch<<std::endl;
       //       std::cout<<"yaw:"<<packet.yaw<<std::endl;

@@ -9,13 +9,11 @@
         <Sequence>
             <WhileDoElse>
                 <GameStatusCheck time_limit="4"/>
-                <Sequence>
-                    <TopicNav2Goal goal="0.117;-0.78;0.0302" topic_name="/goal_pose"/>
-                    <Sleep msec="8000"/>
-                    <TopicNav2Goal goal="0.276;0.614;0.0181" topic_name="/goal_pose"/>
-                    <Sleep msec="8000"/>
-                </Sequence>
-                <TopicNav2Goal goal="-0.193;0.0;0.00563" topic_name="/goal_pose"/>
+                <WhileDoElse>
+                    <StatusCheck sentry_hp_limit="150" projectile_allowance_limit="20"/>
+                    <TopicNav2Goal goal="5.0;1.56;0.0" topic_name="/goal_pose"/>
+                    <TopicNav2Goal goal="0.298;-5.62;0.0" topic_name="/goal_pose"/>
+                </WhileDoElse>
             </WhileDoElse>
         </Sequence>
     </BehaviorTree>
