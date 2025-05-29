@@ -118,16 +118,6 @@ def generate_launch_description():
                 parameters=[configured_params],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
-            # Node(
-            #     package='nav2_amcl',
-            #     executable='amcl',
-            #     name='amcl',
-            #     output='screen',
-            #     respawn=use_respawn,
-            #     respawn_delay=2.0,
-            #     parameters=[configured_params],
-            #     arguments=['--ros-args', '--log-level', log_level],
-            #     remappings=remappings),
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
@@ -160,12 +150,6 @@ def generate_launch_description():
                 name='map_server',
                 parameters=[configured_params],
                 remappings=remappings),
-            # ComposableNode(
-            #     package='nav2_amcl',
-            #     plugin='nav2_amcl::AmclNode',
-            #     name='amcl',
-            #     parameters=[configured_params],
-            #     remappings=remappings),
             ComposableNode(
                 package='nav2_lifecycle_manager',
                 plugin='nav2_lifecycle_manager::LifecycleManager',
@@ -181,10 +165,6 @@ def generate_launch_description():
             # ),
         ],
     )
-    # while True:
-    #     pass
-
-    # Create the launch description and populate
     ld = LaunchDescription()
 
     # Set environment variables

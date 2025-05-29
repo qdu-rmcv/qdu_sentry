@@ -27,7 +27,8 @@ struct ReceivePacket
   float roll;
 
   //uint32_t  event_data; // 重要事件数据        
-  uint8_t time;
+  uint8_t time;//
+  
 
   uint32_t rfid;        //增益 
   uint16_t base_hp;      //基地血量
@@ -68,7 +69,7 @@ struct SendPacket
   float yaw; 
   float pitch;
   float roll=0;   
-  uint8_t notice=(1<<0);  
+  uint8_t notice=(1<<1);  
   float vx; 
   float vy; 
   

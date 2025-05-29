@@ -49,7 +49,7 @@ BT::NodeStatus StatusCheckCondition::tick()
 
   if (basic_hp.sentry_hp <= sentry_hp_limit || 
       basic_hp.projectile_allowance_17mm <= projectile_allowance_limit) {
-    RCLCPP_WARN(logger_,"[StatusCheck] 状态不及预期:血量=%d, 弹药=%d -> 返回FAILURE",
+    RCLCPP_WARN(logger_,"[StatusCheck] 状态差:血量=%d, 弹药=%d -> 返回FAILURE",
     basic_hp.sentry_hp, basic_hp.projectile_allowance_17mm);
     return BT::NodeStatus::FAILURE;
   }

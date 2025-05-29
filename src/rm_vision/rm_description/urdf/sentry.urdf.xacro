@@ -15,15 +15,15 @@
 
   <!-- 云台部分 -->
   <link name="gimbal_odom" />
-  <joint name="gimbal_joint" type="fixed">
-    <origin xyz="0 0 0.35" rpy="0 0 0" />
+  <joint name="gimbal_joint" type="continuous">
+    <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="chassis" />
     <child link="gimbal_odom" />
   </joint>
 
   <link name="yaw_link" />
   <joint name="yaw_joint" type="continuous">
-    <origin xyz="0 0 0.35" rpy="0 0 0" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="gimbal_odom" />
     <child link="yaw_link" />
     <axis xyz="0 0 1" />
@@ -36,6 +36,7 @@
     <child link="livox_frame" />
   </joint>
 
+
   <link name="pitch_link" />
   <joint name="pitch_joint" type="continuous">
     <parent link="yaw_link" />
@@ -45,7 +46,7 @@
 
   <link name="camera_link" />
   <joint name="camera_joint" type="fixed">
-    <origin xyz="0.17 0 0.08" rpy="0 0 0" />
+    <origin xyz="0.17 0 0.00" rpy="0 0 0" />
     <parent link="pitch_link" />
     <child link="camera_link" />
     <axis xyz="0 0 0" />

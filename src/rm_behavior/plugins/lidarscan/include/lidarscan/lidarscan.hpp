@@ -45,7 +45,7 @@ namespace lidarscan
 
     enum scan_state
     {
-        SPIN,         // 正弦旋转状态
+        SPIN,         // 旋转状态
         SCAN,         // 障碍物扫描状态
         DAMAGED_SCAN, // 装甲板击打反馈
         TRACKING,     // 自瞄追踪状态
@@ -109,7 +109,7 @@ namespace lidarscan
         void trackingState();
         bool isYawNearObstacle();
         double closest_obstacle_yaw_;
-        double closest_obstacle_distance_; // 记录最近障碍物的角度距离
+        double closest_obstacle_distance_; // 记录最近障碍物的角度
 
         void gimbalsend();
         void checkStateTransition();
@@ -136,25 +136,20 @@ namespace lidarscan
 
         rclcpp::Time mode_switch_time_;
         double scan_transition_delay_;
-        int state_switch_counter_;    // 状态切换计数器
-        int max_switch_count_;        // 最大切换次数阈值
-        double hysteresis_threshold_; // 状态切换迟滞阈值
+        int state_switch_counter_;    
+        int max_switch_count_;        
+        double hysteresis_threshold_; 
 
         // 平滑过渡相关变量
-        bool in_transition_to_scan_;      // 是否正在向SCAN状态过渡
-        double transition_progress_;      // 过渡进度 (0.0-1.0)
-        double transition_speed_;         // 过渡速度
-        rclcpp::Time tracking_exit_time_; // 追踪退出时间
+        bool in_transition_to_scan_;     
+        double transition_progress_;     
+        double transition_speed_;        
+        rclcpp::Time tracking_exit_time_;
         double tracking_lose_yaw_;
 
         double scan_phase_;
         int current_period;
         int max_scan_period_;
-
-        std::string base_frame_;
-        std::string gimbal_frame_;
-        std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-        std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
         std::vector<double> obstacle_yaws_;
 
@@ -162,8 +157,6 @@ namespace lidarscan
         double spin_pitch_speed_;
         double min_pitch_;
         double max_pitch_;
-        double scan_yaw_angle_;
-        double max_yaw_speed_;
         double scan_theta_;
 
         double state_switch_threshold_;

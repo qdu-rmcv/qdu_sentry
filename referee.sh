@@ -139,7 +139,7 @@ publish_rfid() {
         friendly_big_resource_island: $friendly_big_resource, \
         enemy_big_resource_island: $enemy_big_resource, \
         center_gain_point: $center_gain}"
-        
+
         sleep 0.5
     done
 }

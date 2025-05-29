@@ -35,7 +35,12 @@
                             </Sequence>
                         </WhileDoElse>
                     </Sequence>
-                    <TopicNav2Goal goal="233;233;233" topic_name="/goal_pose"/>
+                    <Sequence>
+                        <TopicNav2Goal goal="1.04;-0.599;0.0302" topic_name="/goal_pose"/>
+                        <Sleep msec="4000"/>
+                        <TopicNav2Goal goal="0.502;-2.74;0.0181" topic_name="/goal_pose"/>
+                        <Sleep msec="4000"/>
+                    </Sequence>
                     <!-- 若前哨站被击毁，回到己方某点 -->
                 </WhileDoElse>
                 <Sequence>

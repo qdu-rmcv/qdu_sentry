@@ -1,10 +1,6 @@
 /**:
   ros__parameters:
 
-    # 坐标系参数
-    base_frame: "base_link"
-    gimbal_frame: "livox_frame"
-    
     # 话题配置
     terrain_map_topic: "/terrain_map" # 地形图话题
     gimbal_cmd_topic: "/gimbalcontrol"   # 云台控制话题
@@ -18,28 +14,25 @@
     min_scan_points: 20    # 最小扫描点数
     
     # 云台运动参数
-    spin_yaw_speed: 1.5    # 云台水平旋转速度
-    spin_pitch_speed: 3.0  # 云台俯仰速度
-    scan_yaw_angle: 0.05   # 扫描时的yaw角度范围
-    max_pitch: 0.30        # 最大俯仰角度
-    min_pitch: -0.21       # 最小俯仰角度
-    max_yaw_speed: 2.0     # 最大yaw旋转速度
-    pitch_more_speed: 0.5  # 仰时yaw速度
-    pitch_more_speed: 0.5  # 俯时yaw速度
+    spin_yaw_speed: 2.0    # 云台水平旋转速度
+    spin_pitch_speed: 2.5  # 云台俯仰速度
+    max_pitch: 0.24        # 最大俯仰角度
+    min_pitch: -0.27       # 最小俯仰角度
+    pitch_more_speed: 0.8  # 仰时yaw速度
+    pitch_less_speed: 0.4  # 俯时yaw速度
     max_scan_period: 5     # 扫描周期数
-    scan_theta: 1.57       # 扫描角度范围
+    scan_theta: 2.0       # 扫描角度范围
     
     # 平滑参数
     yaw_smooth_factor: 0.8      # yaw角度平滑系数
     pitch_smooth_factor: 0.8    # pitch角度平滑系数
     smooth_window_size: 5       # 平滑窗口大小
     state_switch_threshold: 0.5 # 状态切换阈值
-    
-    # 状态切换参数    
-    transition_delay: 3.0       # 状态切换冷却时间（秒）
-    # TODO 存在莫名其妙的回 0 点问题
+
+    # 状态切换参数
+    transition_delay: 1.5       # 状态切换冷却时间（秒）
     max_switch_count: 5         # 允许的最大连续切换次数
-    hysteresis_threshold: 0.15  # 状态切换迟滞阈值
+    hysteresis_threshold: 0.20  # 状态切换迟滞阈值
     transition_speed: 0.05      # 状态平滑过渡速度
     
     # 自瞄和装甲板参数

@@ -287,6 +287,7 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
       send_msg.position.y = aim_y;
       send_msg.position.z = aim_z;
       send_msg.v_yaw = target_msg.v_yaw;
+      std::cout << pitch << std::endl;
       send_msg.pitch = pitch;
       send_msg.yaw = yaw;
       if(tracker_->tracker_state==Tracker::TRACKING)

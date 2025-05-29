@@ -18,7 +18,6 @@ namespace lidarscan
 {
     LidarscanNode::LidarscanNode(const rclcpp::NodeOptions &options)
         : Node("lidarscan_node", options),
-          tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock())),
           current_state_(SPIN),
           current_yaw_(0.0),
           current_pitch_(0.0),
@@ -39,9 +38,6 @@ namespace lidarscan
           logger_(get_logger())
     {
 
-        this->declare_parameter("base_frame", "base_link");
-        this->declare_parameter("gimbal_frame", "livox_frame");
-
         this->declare_parameter<std::string>("terrain_map_topic", "/terrain_map");
         this->declare_parameter<std::string>("gimbal_cmd_topic", "/gimbalcontrol");
         this->declare_parameter<std::string>("tracker_topic", "/tracker/send");
@@ -56,10 +52,8 @@ namespace lidarscan
         // 云台控制参数
         this->declare_parameter("spin_yaw_speed", 0.5);
         this->declare_parameter("spin_pitch_speed", 0.5);
-        this->declare_parameter("scan_yaw_angle", 0.2);
         this->declare_parameter("max_pitch", 0.46);
         this->declare_parameter("min_pitch", -0.39);
-        this->declare_parameter("max_yaw_speed", 2.0);
         this->declare_parameter("pitch_more_speed", 2.0);
         this->declare_parameter("pitch_less_speed", 0.4);
         this->declare_parameter("scan_theta", 1.57);
@@ -73,15 +67,12 @@ namespace lidarscan
         // 状态切换控制参数
         this->declare_parameter("max_switch_count", 5);        // 最大切换次数
         this->declare_parameter("hysteresis_threshold", 0.15); // 迟滞阈值
-        this->declare_parameter("transition_speed", 0.05);     // 过渡速度
+        this->declare_parameter("transition_speed", 0.05);     // scan速度
 
         // 自瞄和装甲板参数
         this->declare_parameter<std::vector<int64_t>>("armor_id", std::vector<int64_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
         this->declare_parameter<double>("max_distance", 8.0);
         this->declare_parameter<double>("transition_delay", 3.0);
-
-        this->get_parameter("base_frame", base_frame_);
-        this->get_parameter("gimbal_frame", gimbal_frame_);
 
         // 获取话题参数
         this->get_parameter("terrain_map_topic", terrain_map_topic_);
@@ -100,10 +91,10 @@ namespace lidarscan
         // 获取控制参数
         this->get_parameter("spin_yaw_speed", spin_yaw_speed_);
         this->get_parameter("spin_pitch_speed", spin_pitch_speed_);
-        this->get_parameter("scan_yaw_angle", scan_yaw_angle_);
+
         this->get_parameter("max_pitch", max_pitch_);
         this->get_parameter("min_pitch", min_pitch_);
-        this->get_parameter("max_yaw_speed", max_yaw_speed_);
+
         this->get_parameter("pitch_more_speed", pitch_more_speed_);
         this->get_parameter("pitch_less_speed", pitch_less_speed_);
 
@@ -141,7 +132,6 @@ namespace lidarscan
             armors_topic_, rclcpp::SensorDataQoS(),
             std::bind(&LidarscanNode::armorsCallback, this, std::placeholders::_1));
 
-        // 提高计时器频率到100Hz (每10ms执行一次)
         scan_timer_ = this->create_wall_timer(
             std::chrono::milliseconds(10), std::bind(&LidarscanNode::scanTimerCallback, this));
 
@@ -149,8 +139,6 @@ namespace lidarscan
         chassis_sub_ = this->create_subscription<auto_aim_interfaces::msg::Chassis>(
             chassis_topic_, rclcpp::SensorDataQoS(),
             std::bind(&LidarscanNode::chassisCallback, this, std::placeholders::_1));
-
-        tf_buffer_->setUsingDedicatedThread(true);
 
         for (int i = 0; i < smooth_window_size_; ++i)
         {
@@ -211,32 +199,6 @@ namespace lidarscan
     // Chassis回调函数
     void LidarscanNode::chassisCallback(const auto_aim_interfaces::msg::Chassis::SharedPtr msg)
     {
-        chassis_yaw_offset_ = msg->chassis_yaw_offset;
-
-        if (msg->damaged_armor_id > 0 && msg->damaged_armor_id <= 4)
-        {
-            damaged_armor_detected_ = true;
-            current_damaged_armor_id_ = msg->damaged_armor_id;
-            target_yaw_ = calculateArmorYaw(current_damaged_armor_id_);
-
-            if (current_state_ != DAMAGED_SCAN)
-            {
-                current_state_ = DAMAGED_SCAN;
-                scan_phase_ = 0.0;
-                current_period = max_scan_period_;
-                RCLCPP_INFO(logger_, "检测到受损装甲板ID: %d, 目标yaw: %.2f, 切换到DAMAGED_SCAN状态",
-                            current_damaged_armor_id_, target_yaw_);
-            }
-        }
-        else if (damaged_armor_detected_)
-        {
-            damaged_armor_detected_ = false;
-            if (current_state_ == DAMAGED_SCAN)
-            {
-                current_state_ = SPIN;
-                RCLCPP_INFO(logger_, "切换回SPIN状态");
-            }
-        }
     }
 
     void LidarscanNode::terrainmapCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
@@ -454,12 +416,7 @@ namespace lidarscan
                 if (time_since_exit >= scan_transition_delay_)
                 {
                     // 根据当前状态决定下一个状态
-                    if (damaged_armor_detected_)
-                    {
-                        new_state = DAMAGED_SCAN;
-                        RCLCPP_INFO(logger_, "TRACKING -> DAMAGED_SCAN (等待时间结束: %.1f秒)", time_since_exit);
-                    }
-                    else if (!obstacle_yaws_.empty() && isYawNearObstacle())
+                    if (!obstacle_yaws_.empty() && isYawNearObstacle())
                     {
                         new_state = SCAN;
                         RCLCPP_INFO(logger_, "TRACKING -> SCAN (%.1fs)", time_since_exit);
@@ -656,7 +613,6 @@ namespace lidarscan
         auto_aim_interfaces::msg::Send cmd_msg;
         cmd_msg.yaw = final_yaw;
         cmd_msg.pitch = final_pitch;
-        cmd_msg.tracking = (current_state_ == SCAN || current_state_ == DAMAGED_SCAN);
         gimbal_cmd_pub_->publish(cmd_msg);
     }
 
@@ -731,7 +687,6 @@ namespace lidarscan
         static double yaw_direction = 1.0;
         static bool at_boundary = false;
 
-        // 处理上下俯仰
         current_pitch_ += pitch_direction * spin_pitch_speed_ * dt_;
         if (current_pitch_ >= max_pitch_)
         {
@@ -744,20 +699,18 @@ namespace lidarscan
             pitch_direction = 1.0;
         }
 
-        // 定义扫描的角度范围
         double yaw_limit_max = closest_obstacle_yaw_ + scan_theta_ / 2;
         double yaw_limit_min = closest_obstacle_yaw_ - scan_theta_ / 2;
 
         if (in_transition_to_scan_)
         {
-
             transition_progress_ += transition_speed_ * dt_;
 
             if (transition_progress_ >= 1.0)
             {
                 transition_progress_ = 1.0;
                 in_transition_to_scan_ = false;
-                RCLCPP_INFO(logger_, "SPIN到SCAN过渡完成");
+                RCLCPP_INFO(logger_, "SPIN->SCAN");
             }
 
 
@@ -797,7 +750,7 @@ namespace lidarscan
             {
                 if (!at_boundary)
                 {
-                    RCLCPP_INFO(logger_, "扫描障碍物 角度: %.2f, 到达右边界, 进度: %d/%d",
+                    RCLCPP_INFO(logger_, "扫描障碍物 角度: %.2f, 右边界, 周期: %d/%d",
                                 closest_obstacle_yaw_, current_period, max_scan_period_);
                     current_period++;
                     at_boundary = true;
@@ -809,7 +762,7 @@ namespace lidarscan
             {
                 if (!at_boundary)
                 {
-                    RCLCPP_INFO(logger_, "扫描障碍物 角度: %.2f, 到达左边界, 进度: %d/%d",
+                    RCLCPP_INFO(logger_, "扫描障碍物 角度: %.2f, 左边界, 周期: %d/%d",
                                 closest_obstacle_yaw_, current_period, max_scan_period_);
                     current_period++;
                     at_boundary = true;
@@ -824,7 +777,6 @@ namespace lidarscan
             current_yaw_ = new_yaw;
         }
 
-        // 检查是否完成指定数量的扫描周期
         if (current_period >= max_scan_period_)
         {
             current_period = 0;
@@ -844,83 +796,6 @@ namespace lidarscan
 
     void LidarscanNode::damagedScanState()
     {
-        static double pitch_direction = 1.0;
-        static double yaw_direction = 1.0;
-        static bool at_boundary = false;
-
-        // 与普通扫描类似，但围绕装甲板位置进行
-        current_pitch_ += pitch_direction * spin_pitch_speed_ * dt_;
-
-        if (current_pitch_ >= max_pitch_)
-        {
-            current_pitch_ = max_pitch_;
-            pitch_direction = -1.0;
-        }
-        else if (current_pitch_ <= min_pitch_)
-        {
-            current_pitch_ = min_pitch_;
-            pitch_direction = 1.0;
-        }
-
-        // 围绕被打击的装甲板位置扫描
-        double yaw_limit_max = target_yaw_ + scan_theta_ / 2;
-        double yaw_limit_min = target_yaw_ - scan_theta_ / 2;
-
-        // 计算新的yaw位置，考虑方向和速度因子
-        double yaw_speed_factor = current_pitch_ < 0 ? pitch_less_speed_ : pitch_more_speed_;
-        double yaw_speed = spin_yaw_speed_ * dt_ * yaw_speed_factor;
-        double new_yaw = current_yaw_ + yaw_direction * yaw_speed;
-
-        // 检查是否超出范围并调整
-        if (new_yaw > yaw_limit_max)
-        {
-            if (!at_boundary)
-            {
-                RCLCPP_INFO(logger_, "扫描受损装甲板 ID: %d, 到达右边界, 角度: %.2f, 进度: %d/%d",
-                            current_damaged_armor_id_, target_yaw_, current_period, max_scan_period_);
-                current_period++;
-                at_boundary = true;
-            }
-            new_yaw = yaw_limit_max;
-            yaw_direction = -1.0;
-        }
-        else if (new_yaw < yaw_limit_min)
-        {
-            if (!at_boundary)
-            {
-                RCLCPP_INFO(logger_, "扫描受损装甲板 ID: %d, 到达左边界, 角度: %.2f, 进度: %d/%d",
-                            current_damaged_armor_id_, target_yaw_, current_period, max_scan_period_);
-                current_period++;
-                at_boundary = true;
-            }
-            new_yaw = yaw_limit_min;
-            yaw_direction = 1.0;
-        }
-        else
-        {
-            at_boundary = false;
-        }
-
-        // 应用计算后的角度
-        current_yaw_ = new_yaw;
-
-        if (current_period >= max_scan_period_)
-        {
-            current_period = 0;
-            scan_phase_ = 0.0;
-            damaged_armor_detected_ = false;
-            current_state_ = SPIN;
-            RCLCPP_INFO(logger_, "DAMAGED_SCAN -> SPIN (装甲板扫描完成), 当前yaw: %.2f", current_yaw_);
-        }
-
-        // 标准化角度到[-π, π]
-        if (current_yaw_ > M_PI)
-            current_yaw_ -= 2 * M_PI;
-        else if (current_yaw_ < -M_PI)
-            current_yaw_ += 2 * M_PI;
-
-        target_yaw_ = current_yaw_;
-        target_pitch_ = current_pitch_;
     }
 
     LidarscanNode::~LidarscanNode() {}
