@@ -1,0 +1,31 @@
+#!/bin/bash
+
+cmds=(
+	# "ros2 launch rm_description robot_description.launch.py"
+	"ros2 launch rm_vision_bringup vision_bringup.launch.py "
+	"ros2 launch livox_ros_driver2 msg_MID360_launch.py"
+
+	# "ros2 launch fast_lio mapping.launch.py"
+
+	"ros2 launch point_lio point_lio.launch.py"
+	"ros2 launch sensor_scan_generation sensor_scan_generation.launch.py"
+	"ros2 launch loam_interface loam_interface_launch.py"
+
+	"sleep 3 && ros2 launch terrain_analysis terrain_analysis_launch.py" #cpp
+	"sleep 3 && ros2 launch icp_registration icp.launch.py" #yamls
+	# "ros2 launch small_gicp_relocalization small_gicp_relocalization_launch.py"
+	"sleep 3 && ros2 launch lidarscan lidarscan.launch.py"
+	"ros2 launch pointcloud_to_laserscan pointcloud_to_laserscan_launch.py"
+	# "ros2 run tf2_ros static_transform_publisher --frame-id map --child-frame-id odom --x 0 --y 0 --z 0 --roll 0 --pitch 0 --yaw 0 --ros-args -r /tf:=tf -r /tf_static:=tf_static -r  __ns:=/red_standard_robot1"
+	"sleep 4 && ros2 launch rm_navigation bringup_launch.py"
+	"ros2 launch rm_behavior rm_behavior_launch.py"
+
+	)
+
+for cmd in "${cmds[@]}";
+do
+	echo Current CMD : "$cmd"
+	gnome-terminal -- bash -c "cd $(pwd);source install/setup.bash;$cmd;exec bash;"
+	sleep 0.7
+	done
+
