@@ -1,0 +1,9 @@
+[submodule "src/rm_behavior"]
+	path = src/rm_behavior
+	url = git@github.com:qdu-rmcv/rm_behavior
+[submodule "src/rm_navigation"]
+	path = src/rm_navigation
+	url = git@github.com:qdu-rmcv/rm_navigation
+[submodule "src/rm_vision"]
+	path = src/rm_vision
+	url = git@github.com:qdu-rmcv/rm_vision_sentry
